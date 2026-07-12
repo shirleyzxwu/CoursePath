@@ -1,0 +1,13 @@
+name: coursepath
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pip:
+      - anthropic
+      - sentence-transformers
+      - RateMyProfessorAPI
+      - torch               # required by sentence-transformers (CPU-only fine)
