@@ -4,210 +4,250 @@ A constraint-based academic planning engine that generates optimized one-semeste
 
 ---
 
-## Architecture
+## Repository structure
 
 ```
-coursepath/
-├── planner.py          # Core planning engine (prerequisite graph, scoring, beam search)
-├── annotator.py        # LLM-powered batch annotation: descriptors + expanded topic tags
-├── embedder.py         # Semantic index builder + free-text → interest profile converter
-├── data_quality.py     # Per-course confidence scoring; quality-weighted schedule display
-├── data/
-│   ├── courses.json        # Normalized course dataset (source of truth)
-│   ├── tag_taxonomy.json   # Canonical ~100-tag vocabulary with descriptions
-│   ├── embeddings.npz      # Pre-built embedding index [gitignored, rebuilt locally]
-│   └── rmp_cache.json      # RateMyProfessor cache [gitignored, refreshed per semester]
-└── examples/
-    └── sample_output.txt
+CoursePath/
+├── .gitignore
+├── environment.yml          # conda: python 3.11 + all deps
+├── setup.sh                 # ordered pipeline reference
+├── CoursePath_UI.jsx        # React four-year planner UI
+│
+├── coursepath/              # Python package
+│   ├── __init__.py
+│   ├── planner.py           # core engine: prereq graph, beam search, scoring
+│   ├── annotator.py         # LLM batch enrichment (descriptors + topic tags)
+│   ├── embedder.py          # semantic index builder + free-text profile builder
+│   ├── data_quality.py      # per-course confidence scoring
+│   ├── README.md            # this file
+│   └── data/
+│       ├── courses.json         # curated course dataset [in git]
+│       ├── tag_taxonomy.json    # 97-tag vocabulary [in git]
+│       ├── embeddings.npz       # embedding index [gitignored — rebuild locally]
+│       └── rmp_cache.json       # RMP ratings cache [gitignored — refresh per semester]
+│
+├── scripts/
+│   ├── fetch_rmp.py         # scrape RateMyProfessors → rmp_cache.json
+│   ├── fetch_sis.py         # Berkeley SIS API → sis_classes_raw.json [gitignored]
+│   └── merge_sources.py     # fold rmp + sis data into courses.json
+│
+└── tests/
+    ├── conftest.py          # sets working directory for all tests
+    ├── test_planner.py      # 50 tests: prereqs, topo sort, scoring, beam search
+    └── test_data_quality.py # 45 tests: signal functions, scoring, labels
 ```
 
-**What lives in version control vs not:**
+**What lives in git vs not:**
 
 | File | In git | Reason |
 |---|---|---|
-| `courses.json` | ✓ | manually curated + LLM-annotated source of truth |
-| `tag_taxonomy.json` | ✓ | stable vocabulary; changes are intentional |
-| `annotator.py`, `embedder.py`, `data_quality.py` | ✓ | logic only, no keys |
+| `courses.json`, `tag_taxonomy.json` | ✓ | curated source of truth |
+| All `.py` files | ✓ | logic only, no secrets |
+| `environment.yml`, `setup.sh` | ✓ | reproducible environment |
+| `CoursePath_UI.jsx` | ✓ | frontend component |
 | `embeddings.npz` | ✗ | derived artifact; `embedder --build` regenerates it |
 | `rmp_cache.json` | ✗ | scraped data; refresh each semester |
 | `sis_classes_raw.json` | ✗ | raw API dump; re-fetch with credentials |
-| `.env` / any file with API keys | ✗ | always |
+| `.env` / any key file | ✗ | always |
 
 ---
 
-## Core Algorithms
+## Pipeline (run in order)
 
-### Prerequisite Evaluation
-Recursive evaluation of nested `and`/`or` prerequisite trees in O(n) per course. Handles arbitrary nesting depth and shared sub-expressions.
+```bash
+conda activate coursepath
 
-### Topological Ordering
-Kahn's algorithm (BFS-based) builds a valid enrollment order across the full course graph. Used to validate multi-year plan feasibility and detect prerequisite cycles.
+# 1. RMP ratings — no credentials needed
+python scripts/fetch_rmp.py
+# → writes coursepath/data/rmp_cache.json (gitignored)
 
-### Single-Semester Planner
-Enumerates feasible course combinations filtered by prerequisite satisfaction, unit bounds `[min_units, max_units]`, and term availability. Scored via:
+# 2. SIS course data — requires SIS API credentials
+export SIS_APP_ID=your_app_id
+export SIS_APP_KEY=your_app_key
+python scripts/fetch_sis.py --term 2258    # 2258 = Fall 2025
+# → writes coursepath/data/sis_classes_raw.json (gitignored)
+
+# 3. Merge external signals into courses.json
+python scripts/merge_sources.py            # uses rmp + sis if both present
+python scripts/merge_sources.py --rmp-only # before SIS credentials
+
+# 4. LLM annotation
+export ANTHROPIC_API_KEY=sk-ant-...
+python -m coursepath.annotator
+# → adds descriptors + extended topic tags to courses.json
+
+# 5. Data quality scoring
+python -m coursepath.data_quality
+# → writes data_quality field into every course record
+
+# 6. Build semantic embedding index
+python -m coursepath.embedder --build
+# → writes coursepath/data/embeddings.npz (gitignored)
+
+# 7. Run the planner
+python -m coursepath.planner
+
+# Commit the enriched courses.json after steps 3–5
+git add coursepath/data/courses.json
+git commit -m "Update courses: RMP ratings, LLM annotations, data quality"
+git push
+```
+
+---
+
+## Core algorithms
+
+### Prerequisite evaluation
+Recursive `and`/`or` tree evaluation in O(n). Handles arbitrary nesting; raises on unknown formats.
+
+### Topological ordering
+Kahn's BFS algorithm over the full dependency graph. Used to validate multi-year plan feasibility and verify no prerequisite cycles exist.
+
+### Single-semester planner
+Enumerates feasible course combinations (schedule size capped at 6) filtered by:
+- prerequisite satisfaction
+- unit bounds `[min_units, max_units]`
+- term availability (`Fall` / `Spring`)
+
+Scored via a weighted linear model:
 
 ```
 score = w_interest  · confidence_weighted_interest_alignment
       − w_difficulty · avg_difficulty
-      + w_professor  · confidence_weighted_professor_rating
+      + w_professor  · confidence_weighted_avg_professor_rating
       + w_breadth    · breadth_completion_delta
 ```
 
-Interest and professor signals are scaled by each course's `data_quality` score before averaging, so low-confidence courses exert proportionally less influence. A min-heap of size `top_k` avoids materializing all combinations.
+Interest and professor signals are weighted by each course's `data_quality` score before averaging. A min-heap of size `top_k` avoids materialising all combinations.
 
-### Four-Year Planner (Beam Search over State Transitions)
-Eight-semester planning modeled as sequential state transitions. Each `PlannerState` carries:
+### Four-year planner — beam search over state transitions
+Eight-semester planning modelled as sequential state transitions. Each `PlannerState` carries:
 - `completed: frozenset[str]` — courses taken so far
 - `cumulative_score: float`
 - `semester_plans: list[dict]`
 - `req_tracker: RequirementTracker` — breadth/major requirement fulfillment
 
-At each semester the beam is expanded by generating `top_k_per_semester` single-semester plans per state, then pruned to `beam_width` by cumulative score.
+At each semester the beam expands by generating `top_k_per_semester` single-semester plans per state, then prunes to `beam_width` by cumulative score.
 
-**Complexity:** O(beam\_width × top\_k × C(|available|, k)) per semester, schedule size capped at 6.
+**Complexity:** O(beam_width × top_k × C(|available|, k)) per semester.
+
+### Requirement tracker
+Bucket-based fulfillment tracker. Courses map to named requirement buckets (e.g. `breadth:social`, `major:upper-div`). Completion ratio feeds the breadth bonus weight.
 
 ---
 
-## Semantic Interest Profiling
+## Semantic interest profiling
 
-### Tag Taxonomy (`data/tag_taxonomy.json`)
-~100 canonical tags spanning CS, data science, statistics, biology, chemistry, physics, engineering, math, social science, and more. Each tag has a short description used both for LLM annotation prompts and for building the embedding index. The taxonomy is the single file to edit when adding new disciplines — nothing else needs updating.
+### Tag taxonomy (`data/tag_taxonomy.json`)
+97 canonical tags across CS, data science, statistics, biology, chemistry, physics, engineering, math, social science, and more. Each tag has a short description used for LLM annotation prompts and embedding. Edit this file to add disciplines — nothing else needs updating.
 
-### LLM Annotation (`annotator.py`)
+### LLM annotation (`annotator.py`)
 Uses `claude-sonnet-4-20250514` to enrich each course with:
-- `"descriptors"`: 5–12 free-form keyword phrases (what skills are practiced, what problems are solved, what careers it prepares for)
-- `"topics"`: expanded tag weights using the full taxonomy, using the existing hand-crafted weights as a starting point
+- `"descriptors"`: 5–12 free-form keyword phrases (skills practiced, problems solved, career paths)
+- `"topics"`: extended tag weights using the full taxonomy
 
-Runs once per new batch of courses. Writes back to `courses.json` with `"manually_reviewed": false`. Flip to `true` after human verification.
+Runs once per new batch of courses. Sets `"manually_reviewed": false`; flip to `true` after human verification.
 
 ```bash
-ANTHROPIC_API_KEY=sk-... python -m coursepath.annotator       # annotate new courses
-ANTHROPIC_API_KEY=sk-... python -m coursepath.annotator --force  # re-annotate all
+ANTHROPIC_API_KEY=sk-ant-... python -m coursepath.annotator          # new courses only
+ANTHROPIC_API_KEY=sk-ant-... python -m coursepath.annotator --force  # re-annotate all
 ```
 
-### Semantic Embedder (`embedder.py`)
-Converts a free-text interest description into a `{tag: weight}` profile via:
-1. Embed user input → query vector (1 model call)
-2. Cosine similarity against all tag embeddings: `sim(q, tag_i) = q · tag_i` (L2-normalised dot product, O(N·D))
-3. Keep top-k tags above similarity threshold; normalise to [0, 1]
+### Semantic embedder (`embedder.py`)
+Converts free-text interest input into a `{tag: weight}` profile:
+1. Embed user text → query vector (1 model call)
+2. Cosine similarity against all tag embeddings: `q · tag_i` (L2-normalised dot product, O(N·D))
+3. Keep top-k tags above threshold; normalise to [0, 1]
 
-**Default model:** `all-MiniLM-L6-v2` (sentence-transformers, 384-dim, MIT license, runs fully offline on CPU in ~80ms).
+**Default model:** `all-MiniLM-L6-v2` (sentence-transformers, MIT license, fully offline, ~80ms on CPU).
+**Alternative:** set `COURSEPATH_EMBED_BACKEND=anthropic` to use `voyage-3-lite` via the Anthropic API.
 
-**Alternative:** set `COURSEPATH_EMBED_BACKEND=anthropic` to use `voyage-3-lite` embeddings via the Anthropic API — faster for large batches, requires network and `ANTHROPIC_API_KEY`.
+Three profile input modes at runtime: free-text description, list of liked courses (centroid embedding), or manual sliders.
 
 ```bash
-# Build index once (or after updating courses.json / tag_taxonomy.json)
 python -m coursepath.embedder --build
-
-# Try a query
-python -m coursepath.embedder --query "I want to do computational genomics and ML pipelines for single-cell RNA-seq"
+python -m coursepath.embedder --query "computational genomics and single-cell RNA-seq"
 ```
-
-Three profile input modes are available at runtime:
-- **Free-text** — describe interests in plain English; embedder derives the profile
-- **Liked courses** — list courses enjoyed; profile derived from their centroid embedding
-- **Manual sliders** — classic per-topic rating (fallback when embedder index unavailable)
 
 ---
 
-## Data Quality & Confidence Weighting (`data_quality.py`)
+## Data quality & confidence weighting (`data_quality.py`)
 
-Each course receives a `data_quality` score in [0, 1] computed as a weighted sum of six signals:
+Each course gets a `data_quality` score in [0, 1] computed as a weighted sum of six signals:
 
 | Signal | Weight | Present when |
 |---|---|---|
 | `manually_reviewed` | 0.30 | A human has verified the annotation |
-| `descriptors` | 0.20 | ≥ 3 free-form descriptor phrases exist |
-| `extended_topics` | 0.15 | ≥ 4 topic tags (expanded taxonomy) |
+| `descriptors` | 0.20 | ≥ 3 free-form descriptor phrases |
+| `extended_topics` | 0.15 | ≥ 4 topic tags |
 | `professor_rating` | 0.15 | Rating exists and `num_ratings ≥ 5` |
-| `grade_distribution` | 0.10 | `grade_dist` key present with ≥ 3 grade entries |
-| `sis_verified` | 0.10 | Course verified against SIS API |
+| `grade_distribution` | 0.10 | `grade_dist` key with ≥ 3 grade entries |
+| `sis_verified` | 0.10 | Verified against SIS API |
 
-Weights are tunable via `SIGNAL_WEIGHTS` in `data_quality.py` without touching any other logic. New signals are added by implementing one presence function and registering it in `_SIGNAL_FNS`.
+Weights are tunable via `SIGNAL_WEIGHTS` without touching any other logic. New signals are added by implementing one function and registering it in `_SIGNAL_FNS`.
 
-The planner's output includes a `"quality"` field per plan:
+Planner output includes a `"quality"` field per plan:
 ```json
 {
   "courses": ["DATA C100", "MCELLBI C148"],
   "score": 0.812,
-  "quality": {
-    "mean": 0.45,
-    "min": 0.30,
-    "low_confidence": ["MCELLBI C148"],
-    "label": "medium"
-  }
+  "quality": { "mean": 0.45, "min": 0.30, "low_confidence": ["MCELLBI C148"], "label": "medium" }
 }
 ```
 
 ```bash
-python -m coursepath.data_quality           # write data_quality into courses.json
-python -m coursepath.data_quality --show    # print per-course scores without writing
+python -m coursepath.data_quality           # write scores into courses.json
+python -m coursepath.data_quality --show    # print per-course breakdown, no write
 ```
 
 ---
 
-## Data Sources & API Integration
+## Multi-instructor courses
+
+Courses with multiple instructors store an `"instructors": [...]` list. `fetch_rmp.py` scrapes each instructor individually; `merge_sources.py` computes a weighted average of their RMP ratings, weighted by `num_ratings` (instructors with more reviews count proportionally more). The averaged scalar is stored as `professor_rating` — no downstream changes needed.
+
+Instructors listed as `"TBA"` are skipped during scraping and contribute zero to the `professor_rating` signal in `data_quality.py`.
+
+---
+
+## Data sources
 
 ### Berkeley SIS API
-Authenticated REST API (OpenAPI v3) at `gateway.api.berkeley.edu`. Apply for credentials at `developers.api.berkeley.edu` with a CalNet identity. Use a one-time bulk fetch pattern — store the API key in an environment variable, write output to `data/sis_classes_raw.json` (gitignored), then run a post-processing script to merge into `courses.json`. The fetcher script belongs in version control; the raw dump does not.
+Authenticated REST API at `gateway.api.berkeley.edu`. Apply at `developers.api.berkeley.edu` with a CalNet identity. Store credentials in environment variables; never commit them. Run `fetch_sis.py` once per semester; the raw dump (`sis_classes_raw.json`) is gitignored.
 
 ### Berkeleytime (`asuc-octo/berkeleytime`)
-The open-source repo's Django models and ingestion pipeline (`apps/backend/catalog/`) reveal the exact SIS API endpoints and response parsing logic. The most valuable signal: per-section letter grade distributions (`grade_dist`), published 2–3 months after semester end. Use these to refine `difficulty` with actual grade variance rather than anecdotal ratings.
+Now a TypeScript/GraphQL stack (not Django). The repo's TypeScript types document the SIS API schema. Grade distributions are the most valuable signal — published 2–3 months post-semester. Use `fetch_sis.py` directly rather than replicating the Berkeleytime pipeline.
 
 ### RateMyProfessors
-`pip install RateMyProfessorAPI`. Scrape once per semester, cache to `data/rmp_cache.json` (gitignored). Apply a `num_ratings` gate (≥ 5) before trusting ratings; fall back to department median otherwise.
-
-```python
-import ratemyprofessor, time, json
-school = ratemyprofessor.get_school_by_name("University of California Berkeley")
-cache = {}
-for instructor in instructors:
-    prof = ratemyprofessor.get_professor_by_school_and_name(school, instructor)
-    cache[instructor] = {"rating": prof.rating, "num_ratings": prof.num_ratings} if prof else None
-    time.sleep(1)
-with open("data/rmp_cache.json", "w") as f:
-    json.dump(cache, f, indent=2)
-```
+`pip install RateMyProfessorAPI`. Scrape once per semester into `rmp_cache.json` (gitignored). Apply a `num_ratings ≥ 5` gate; fall back to department median for courses below the threshold.
 
 ---
 
-## Quickstart
+## Tests
 
 ```bash
-# 1. Annotate courses with the LLM (once, or on new courses)
-ANTHROPIC_API_KEY=sk-... python -m coursepath.annotator
-
-# 2. Score data quality
-python -m coursepath.data_quality
-
-# 3. Build the semantic embedding index
-python -m coursepath.embedder --build
-
-# 4. Run the planner
-python -m coursepath.planner
+pip install pytest
+pytest tests/ -v                                          # all tests
+pytest tests/test_planner.py -v                          # planner only
+pytest tests/test_data_quality.py -v                     # data quality only
+pytest tests/test_planner.py::TestPrereqSatisfied -v     # one class
 ```
 
-Run tests:
-```bash
-python -c "
-import coursepath.planner as p
-p.test_prereq_satisfied()
-p.test_topological_order()
-p.test_single_semester()
-p.test_four_year_plan()
-"
-```
+`test_planner.py` — 50 tests: prereq evaluation, topological ordering, `RequirementTracker`, interest alignment, scoring, unit bounds, `generate_semester_plans` (prereq gating, term filters, completed exclusion), `plan_four_years` (beam width, 8-semester sequence, no duplicates, score ordering), `PlannerState` immutability.
+
+`test_data_quality.py` — 45 tests: `SIGNAL_WEIGHTS` invariant, all six signal functions (boundary values, partial credit tiers), `score_course` (range, rounding, tier ordering), `breakdown`, `quality_label` (8 parameterised boundaries), `plan_quality_summary`.
 
 ---
 
-## Planned Extensions
+## Planned extensions
 
-- [ ] SIS API fetcher script + `courses.json` merge pipeline
-- [ ] Berkeleytime grade distribution → `grade_dist` field per course
+- [ ] SIS API fetcher → auto-populate `courses.json` each semester
+- [ ] Berkeleytime grade distributions → `grade_dist` field per course
 - [ ] Breadth requirement rule engine (L&S, Data Science, MCB tracks)
 - [ ] ILP-based exact solver (PuLP/OR-Tools) as alternative to beam search
-- [ ] FastAPI backend + React drag-and-drop schedule builder
-- [ ] Per-course score breakdown in planner output (explainability layer)
+- [ ] FastAPI backend serving the planner
+- [ ] Drag-and-drop schedule builder in the React UI
+- [ ] Per-course score breakdown (explainability layer)
 
 ---
 
