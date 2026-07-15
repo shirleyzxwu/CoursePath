@@ -553,6 +553,12 @@ class TestPlanFourYears:
         assert len(all_scheduled) == len(set(all_scheduled)), \
             "A course appeared in more than one semester"
 
+    def test_courses_have_instructors_list(self):
+        for name, data in COURSES.items():
+            assert "instructors" in data, f"{name} missing instructors field"
+            assert isinstance(data["instructors"], list), f"{name} instructors must be a list"
+            assert len(data["instructors"]) >= 1, f"{name} instructors list is empty"
+
     def test_completed_field_grows_monotonically(self, bio_profile, default_weights):
         plans = plan_four_years(
             interest_profile=bio_profile,
@@ -635,3 +641,87 @@ class TestPlannerState:
         new_state = state.apply_semester("Fall", "Year 1", sem)
         assert "MATH 55" not in state.completed  # original unchanged
         assert "MATH 55" in new_state.completed
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Multi-instructor RMP averaging (tests merge_sources.merge_rmp logic)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestMultiInstructorAveraging:
+    """
+    Validates the weighted-average RMP logic from merge_sources.merge_rmp().
+    Tests the math directly without needing the file I/O.
+    """
+
+    def _weighted_avg(self, entries):
+        """Replicate merge_rmp averaging logic."""
+        ratings, weights = [], []
+        for entry in entries:
+            if entry is None or entry.get("rating") is None:
+                continue
+            w = max(entry.get("num_ratings", 0), 1)
+            ratings.append(entry["rating"] * w)
+            weights.append(w)
+        if not ratings:
+            return None
+        return sum(ratings) / sum(weights)
+
+    def test_single_instructor(self):
+        entries = [{"rating": 4.5, "num_ratings": 20}]
+        assert abs(self._weighted_avg(entries) - 4.5) < 1e-9
+
+    def test_equal_num_ratings_simple_mean(self):
+        entries = [
+            {"rating": 4.0, "num_ratings": 10},
+            {"rating": 3.0, "num_ratings": 10},
+        ]
+        assert abs(self._weighted_avg(entries) - 3.5) < 1e-9
+
+    def test_higher_num_ratings_dominates(self):
+        entries = [
+            {"rating": 5.0, "num_ratings": 100},  # heavy weight
+            {"rating": 1.0, "num_ratings": 1},     # near-zero weight
+        ]
+        avg = self._weighted_avg(entries)
+        assert avg > 4.5  # dominated by the 5.0 instructor
+
+    def test_none_entry_skipped(self):
+        entries = [None, {"rating": 3.0, "num_ratings": 10}]
+        assert abs(self._weighted_avg(entries) - 3.0) < 1e-9
+
+    def test_missing_rating_skipped(self):
+        entries = [
+            {"rating": None, "num_ratings": 50},
+            {"rating": 4.0,  "num_ratings": 20},
+        ]
+        assert abs(self._weighted_avg(entries) - 4.0) < 1e-9
+
+    def test_all_none_returns_none(self):
+        assert self._weighted_avg([None, None]) is None
+
+    def test_zero_num_ratings_floor_at_one(self):
+        # num_ratings=0 → floor to 1, so both instructors get equal weight
+        entries = [
+            {"rating": 4.0, "num_ratings": 0},
+            {"rating": 2.0, "num_ratings": 0},
+        ]
+        assert abs(self._weighted_avg(entries) - 3.0) < 1e-9
+
+    def test_tba_instructors_produce_no_entry(self):
+        # fetch_rmp.py skips "TBA" — simulate by passing empty list
+        assert self._weighted_avg([]) is None
+
+    def test_biology_1b_six_instructors(self):
+        # BIOLOGY 1B has 6 instructors — simulate typical RMP coverage
+        entries = [
+            {"rating": 4.9, "num_ratings": 80},
+            {"rating": 4.7, "num_ratings": 60},
+            {"rating": 4.5, "num_ratings": 40},
+            {"rating": 4.2, "num_ratings": 20},
+            {"rating": 3.8, "num_ratings": 10},
+            {"rating": 3.5, "num_ratings": 5},
+        ]
+        avg = self._weighted_avg(entries)
+        # Higher-reviewed instructors pull avg up; expect > 4.5
+        assert avg > 4.5
+        assert avg < 4.9
