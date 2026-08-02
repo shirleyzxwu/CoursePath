@@ -1,5 +1,5 @@
 """
-data_quality.py — Per-course data quality (confidence) scoring.
+Per-course data quality (confidence) scoring.
 
 Each course in courses.json may have some signals fully populated,
 partially populated, or absent.  This module computes a data_quality
@@ -17,7 +17,7 @@ The score is a weighted average of signal presence:
   grade_distribution    0.10     "grade_dist" key present with >= 3 entries
   sis_verified          0.10     "sis_verified" == True (set by fetcher.py)
 
-Weights are exposed as SIGNAL_WEIGHTS so you can tune them without
+Weights are exposed as SIGNAL_WEIGHTS so can be tuned without
 touching the logic.
 
 Usage:
@@ -56,7 +56,7 @@ assert abs(sum(SIGNAL_WEIGHTS.values()) - 1.0) < 1e-9, \
 
 # ─────────────────────────────────────────────
 # Per-signal presence check
-# Returns float in [0, 1] per signal (partial credit is possible)
+# Returns float in [0, 1] per signal
 # ─────────────────────────────────────────────
 
 def _signal_manually_reviewed(data: dict) -> float:
@@ -86,7 +86,7 @@ def _signal_professor_rating(data: dict) -> float:
     if n >= 20:  return 1.0
     if n >= 5:   return 0.7
     if n >= 1:   return 0.4
-    # Rating exists but num_ratings not recorded — give partial credit
+    # Rating exists but num_ratings not recorded
     return 0.5
 
 
@@ -103,7 +103,7 @@ def _signal_sis_verified(data: dict) -> float:
 
 
 # ─────────────────────────────────────────────
-# Map signal names → presence functions
+# Map signal names to presence functions
 # Add new signals here without touching score_course()
 # ─────────────────────────────────────────────
 
@@ -136,7 +136,6 @@ def score_course(data: dict) -> float:
 def breakdown(data: dict) -> dict[str, float]:
     """
     Return per-signal presence scores (before weighting).
-    Useful for debugging and the UI explainability layer.
     """
     return {
         signal: _SIGNAL_FNS[signal](data)
@@ -155,7 +154,7 @@ def quality_label(score: float) -> str:
 def annotate_all(courses_path: str = COURSES_PATH) -> None:
     """
     Compute data_quality for every course and write it back to courses.json.
-    Idempotent: safe to re-run at any time.
+    Safe to re-run at any time.
     """
     with open(courses_path) as f:
         courses: dict = json.load(f)

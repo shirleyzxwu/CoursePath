@@ -1,6 +1,4 @@
 """
-tests/conftest.py
-
 Sets the working directory to the project root before any tests run,
 so that coursepath/planner.py can open "coursepath/data/courses.json"
 with a relative path regardless of where pytest is invoked from.

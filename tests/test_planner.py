@@ -1,6 +1,4 @@
 """
-tests/test_planner.py — Tests for coursepath/planner.py
-
 Run with:
     pytest tests/test_planner.py -v
 """
@@ -285,7 +283,7 @@ class TestScoring:
         score_with    = score_schedule(("MCELLBI C148",), bio_profile, default_weights, basic_tracker)
         score_without = score_schedule(("MCELLBI C148",), bio_profile, default_weights, None)
         # breadth bonus not applied when tracker is None, so without should equal
-        # the no-breadth version — or with weight=0 they're equal. Default weights
+        # the no-breadth version, or with weight=0 they're equal. Default weights
         # don't include "breadth", so bonus is 0. They should be equal.
         assert abs(score_with - score_without) < 1e-9
 
@@ -321,7 +319,6 @@ class TestValidSchedule:
         assert valid_schedule(("DATA C8", "COMPSCI 70"), 8, 18) is True  # 8 units
 
     def test_exact_max(self):
-        # MCELLBI 140=8, DATA C8=4, COMPSCI 70=4, DATA C88C=3 → 19 units? Let's use 16
         assert valid_schedule(
             ("DATA C8", "COMPSCI 70", "MATH 55", "DATA C88C"),
             8, 15
@@ -644,17 +641,15 @@ class TestPlannerState:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Multi-instructor RMP averaging (tests merge_sources.merge_rmp logic)
+# Multi-instructor RMP averaging (tests merge_sources.merge_rmp)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestMultiInstructorAveraging:
     """
     Validates the weighted-average RMP logic from merge_sources.merge_rmp().
-    Tests the math directly without needing the file I/O.
     """
 
     def _weighted_avg(self, entries):
-        """Replicate merge_rmp averaging logic."""
         ratings, weights = [], []
         for entry in entries:
             if entry is None or entry.get("rating") is None:
@@ -708,11 +703,11 @@ class TestMultiInstructorAveraging:
         assert abs(self._weighted_avg(entries) - 3.0) < 1e-9
 
     def test_tba_instructors_produce_no_entry(self):
-        # fetch_rmp.py skips "TBA" — simulate by passing empty list
+        # fetch_rmp.py skips "TBA": simulate by passing empty list
         assert self._weighted_avg([]) is None
 
     def test_biology_1b_six_instructors(self):
-        # BIOLOGY 1B has 6 instructors — simulate typical RMP coverage
+        # BIOLOGY 1B has 6 instructors: simulate typical RMP coverage
         entries = [
             {"rating": 4.9, "num_ratings": 80},
             {"rating": 4.7, "num_ratings": 60},
@@ -725,3 +720,109 @@ class TestMultiInstructorAveraging:
         # Higher-reviewed instructors pull avg up; expect > 4.5
         assert avg > 4.5
         assert avg < 4.9
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RequirementTracker — build_tracker integration with requirements.json
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestBuildTracker:
+    """Tests for build_tracker() which loads from requirements.json."""
+
+    def test_list_majors_returns_known(self):
+        majors = list_majors()
+        assert "CS_BA" in majors
+        assert "DATA_BA" in majors
+        assert "MCB" in majors
+        assert "BIOE_BS" in majors
+        assert "EECS_BS" in majors
+        assert "_meta" not in majors
+
+    def test_list_tracks_data_ba(self):
+        tracks = list_tracks("DATA_BA")
+        assert "default" in tracks
+
+    def test_list_tracks_mcb(self):
+        tracks = list_tracks("MCB")
+        assert "GGED_track1" in tracks
+        assert "GGED_track2" in tracks
+        assert "BBS_track1" in tracks
+        assert "IMM_track1" in tracks
+
+    def test_build_tracker_data_ba_default(self):
+        tracker = build_tracker("DATA_BA")
+        assert isinstance(tracker, RequirementTracker)
+        assert "core" in tracker.buckets or any("core" in k for k in tracker.buckets)
+        assert tracker.completion_ratio() == 0.0
+
+    def test_build_tracker_mcb_gged1(self):
+        tracker = build_tracker("MCB", "GGED_track1")
+        assert isinstance(tracker, RequirementTracker)
+        assert len(tracker.buckets) > 0
+
+    def test_build_tracker_cs_ba(self):
+        tracker = build_tracker("CS_BA")
+        assert isinstance(tracker, RequirementTracker)
+
+    def test_build_tracker_bioe_computational(self):
+        tracker = build_tracker("BIOE_BS", "computational_biology")
+        assert isinstance(tracker, RequirementTracker)
+
+    def test_build_tracker_invalid_major_raises(self):
+        with pytest.raises(ValueError, match="Unknown major"):
+            build_tracker("FAKE_MAJOR")
+
+    def test_build_tracker_invalid_track_raises(self):
+        with pytest.raises(ValueError, match="Unknown track"):
+            build_tracker("MCB", "nonexistent_track")
+
+    def test_data_ba_core_courses_wired(self):
+        tracker = build_tracker("DATA_BA")
+        # DATA C100 should be registered to the 'core' bucket
+        assert "DATA C100" in tracker.course_to_buckets
+
+    def test_mcb_gged1_required_courses_wired(self):
+        tracker = build_tracker("MCB", "GGED_track1")
+        # MCELLBI C100A is req_1 in GGED track 1
+        assert "MCELLBI C100A" in tracker.course_to_buckets
+
+    def test_applying_courses_increases_ratio(self):
+        tracker = build_tracker("DATA_BA")
+        before = tracker.completion_ratio()
+        tracker.apply("DATA C100")
+        after = tracker.completion_ratio()
+        assert after > before
+
+    def test_mcb_lower_div_shared_loaded(self):
+        tracker = build_tracker("MCB", "GGED_track1")
+        # MCB lower_div_shared contains BIOLOGY 1A and CHEM 1A
+        assert "BIOLOGY 1A & BIOLOGY 1AL" in tracker.course_to_buckets
+        assert "CHEM 1A & CHEM 1AL" in tracker.course_to_buckets
+
+    def test_completing_all_known_courses_raises_ratio(self):
+        tracker = build_tracker("DATA_BA")
+        for course in COURSES:
+            tracker.apply(course)
+        # Not necessarily 1.0 because some required courses aren't in courses.json
+        assert tracker.completion_ratio() > 0.5
+
+    def test_full_gged_track1_walkthrough(self):
+        """Simulates completing all GGED Track 1 required courses in courses.json."""
+        tracker = build_tracker("MCB", "GGED_track1")
+        required = [
+            "MCELLBI C100A",      # req_1
+            "MCELLBI 140 & MCELLBI 140L",  # req_2 + lab
+            "MCELLBI 110",        # req_3
+            "MCELLBI 132",        # elective_b
+            "BIOLOGY 1A & BIOLOGY 1AL",    # lower shared
+            "BIOLOGY 1B",
+            "CHEM 1A & CHEM 1AL",
+            "CHEM 3A & CHEM 3AL",
+            "PHYSICS 8A",
+            "PHYSICS 8B",
+            "MATH 51",
+            "MATH 52",
+        ]
+        for c in required:
+            tracker.apply(c)
+        assert tracker.completion_ratio() > 0.5

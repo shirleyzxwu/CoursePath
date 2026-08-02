@@ -19,7 +19,7 @@ CoursePath/
 │   ├── annotator.py         # LLM batch enrichment (descriptors + topic tags)
 │   ├── embedder.py          # semantic index builder + free-text profile builder
 │   ├── data_quality.py      # per-course confidence scoring
-│   ├── README.md            # this file
+│   ├── README.md            
 │   └── data/
 │       ├── courses.json         # curated course dataset [in git]
 │       ├── tag_taxonomy.json    # 97-tag vocabulary [in git]
@@ -37,35 +37,20 @@ CoursePath/
     └── test_data_quality.py # 45 tests: signal functions, scoring, labels
 ```
 
-**What lives in git vs not:**
-
-| File | In git | Reason |
-|---|---|---|
-| `courses.json`, `tag_taxonomy.json` | ✓ | curated source of truth |
-| All `.py` files | ✓ | logic only, no secrets |
-| `environment.yml`, `setup.sh` | ✓ | reproducible environment |
-| `CoursePath_UI.jsx` | ✓ | frontend component |
-| `embeddings.npz` | ✗ | derived artifact; `embedder --build` regenerates it |
-| `rmp_cache.json` | ✗ | scraped data; refresh each semester |
-| `sis_classes_raw.json` | ✗ | raw API dump; re-fetch with credentials |
-| `.env` / any key file | ✗ | always |
-
----
-
-## Pipeline (run in order)
+## Pipeline
 
 ```bash
 conda activate coursepath
 
-# 1. RMP ratings — no credentials needed
+# 1. RMP ratings
 python scripts/fetch_rmp.py
-# → writes coursepath/data/rmp_cache.json (gitignored)
+# writes coursepath/data/rmp_cache.json
 
-# 2. SIS course data — requires SIS API credentials
+# 2. SIS course data (currently not available to students)
 export SIS_APP_ID=your_app_id
 export SIS_APP_KEY=your_app_key
 python scripts/fetch_sis.py --term 2258    # 2258 = Fall 2025
-# → writes coursepath/data/sis_classes_raw.json (gitignored)
+# writes coursepath/data/sis_classes_raw.json
 
 # 3. Merge external signals into courses.json
 python scripts/merge_sources.py            # uses rmp + sis if both present
@@ -74,15 +59,15 @@ python scripts/merge_sources.py --rmp-only # before SIS credentials
 # 4. LLM annotation
 export ANTHROPIC_API_KEY=sk-ant-...
 python -m coursepath.annotator
-# → adds descriptors + extended topic tags to courses.json
+# adds descriptors + extended topic tags to courses.json
 
 # 5. Data quality scoring
 python -m coursepath.data_quality
-# → writes data_quality field into every course record
+# writes data_quality field into every course record
 
 # 6. Build semantic embedding index
 python -m coursepath.embedder --build
-# → writes coursepath/data/embeddings.npz (gitignored)
+# writes coursepath/data/embeddings.npz
 
 # 7. Run the planner
 python -m coursepath.planner
@@ -120,12 +105,12 @@ score = w_interest  · confidence_weighted_interest_alignment
 
 Interest and professor signals are weighted by each course's `data_quality` score before averaging. A min-heap of size `top_k` avoids materialising all combinations.
 
-### Four-year planner — beam search over state transitions
+### Four-year planner: beam search over state transitions
 Eight-semester planning modelled as sequential state transitions. Each `PlannerState` carries:
-- `completed: frozenset[str]` — courses taken so far
+- `completed: frozenset[str]` : courses taken so far
 - `cumulative_score: float`
 - `semester_plans: list[dict]`
-- `req_tracker: RequirementTracker` — breadth/major requirement fulfillment
+- `req_tracker: RequirementTracker` : breadth/major requirement fulfillment
 
 At each semester the beam expands by generating `top_k_per_semester` single-semester plans per state, then prunes to `beam_width` by cumulative score.
 
@@ -139,7 +124,7 @@ Bucket-based fulfillment tracker. Courses map to named requirement buckets (e.g.
 ## Semantic interest profiling
 
 ### Tag taxonomy (`data/tag_taxonomy.json`)
-97 canonical tags across CS, data science, statistics, biology, chemistry, physics, engineering, math, social science, and more. Each tag has a short description used for LLM annotation prompts and embedding. Edit this file to add disciplines — nothing else needs updating.
+97 canonical tags across CS, data science, statistics, biology, chemistry, physics, engineering, math, social science, and more. Each tag has a short description used for LLM annotation prompts and embedding.
 
 ### LLM annotation (`annotator.py`)
 Uses `claude-sonnet-4-20250514` to enrich each course with:
@@ -159,8 +144,7 @@ Converts free-text interest input into a `{tag: weight}` profile:
 2. Cosine similarity against all tag embeddings: `q · tag_i` (L2-normalised dot product, O(N·D))
 3. Keep top-k tags above threshold; normalise to [0, 1]
 
-**Default model:** `all-MiniLM-L6-v2` (sentence-transformers, MIT license, fully offline, ~80ms on CPU).
-**Alternative:** set `COURSEPATH_EMBED_BACKEND=anthropic` to use `voyage-3-lite` via the Anthropic API.
+**Default model:** `all-MiniLM-L6-v2`
 
 Three profile input modes at runtime: free-text description, list of liked courses (centroid embedding), or manual sliders.
 
@@ -204,7 +188,7 @@ python -m coursepath.data_quality --show    # print per-course breakdown, no wri
 
 ## Multi-instructor courses
 
-Courses with multiple instructors store an `"instructors": [...]` list. `fetch_rmp.py` scrapes each instructor individually; `merge_sources.py` computes a weighted average of their RMP ratings, weighted by `num_ratings` (instructors with more reviews count proportionally more). The averaged scalar is stored as `professor_rating` — no downstream changes needed.
+Courses with multiple instructors store an `"instructors": [...]` list. `fetch_rmp.py` scrapes each instructor individually; `merge_sources.py` computes a weighted average of their RMP ratings, weighted by `num_ratings` (instructors with more reviews count proportionally more). The averaged scalar is stored as `professor_rating`.
 
 Instructors listed as `"TBA"` are skipped during scraping and contribute zero to the `professor_rating` signal in `data_quality.py`.
 
@@ -213,10 +197,7 @@ Instructors listed as `"TBA"` are skipped during scraping and contribute zero to
 ## Data sources
 
 ### Berkeley SIS API
-Authenticated REST API at `gateway.api.berkeley.edu`. Apply at `developers.api.berkeley.edu` with a CalNet identity. Store credentials in environment variables; never commit them. Run `fetch_sis.py` once per semester; the raw dump (`sis_classes_raw.json`) is gitignored.
-
-### Berkeleytime (`asuc-octo/berkeleytime`)
-Now a TypeScript/GraphQL stack (not Django). The repo's TypeScript types document the SIS API schema. Grade distributions are the most valuable signal — published 2–3 months post-semester. Use `fetch_sis.py` directly rather than replicating the Berkeleytime pipeline.
+Authenticated REST API at `gateway.api.berkeley.edu`. Apply at `developers.api.berkeley.edu` with a CalNet identity (as checked in August 2026, the course and class APIs are not available to students). Store credentials in environment variables; never commit them. Run `fetch_sis.py` once per semester; the raw dump (`sis_classes_raw.json`) is gitignored.
 
 ### RateMyProfessors
 `pip install RateMyProfessorAPI`. Scrape once per semester into `rmp_cache.json` (gitignored). Apply a `num_ratings ≥ 5` gate; fall back to department median for courses below the threshold.
@@ -241,13 +222,11 @@ pytest tests/test_planner.py::TestPrereqSatisfied -v     # one class
 
 ## Planned extensions
 
-- [ ] SIS API fetcher → auto-populate `courses.json` each semester
-- [ ] Berkeleytime grade distributions → `grade_dist` field per course
-- [ ] Breadth requirement rule engine (L&S, Data Science, MCB tracks)
+- [ ] Add an example run
+- [ ] SIS API fetcher; auto-populate `courses.json` each semester
+- [ ] Add breadth requirement rules
 - [ ] ILP-based exact solver (PuLP/OR-Tools) as alternative to beam search
 - [ ] FastAPI backend serving the planner
-- [ ] Drag-and-drop schedule builder in the React UI
-- [ ] Per-course score breakdown (explainability layer)
 
 ---
 
@@ -256,5 +235,3 @@ pytest tests/test_planner.py::TestPrereqSatisfied -v     # one class
 Research and learning tool. Does not guarantee enrollment availability or institutional compliance. Not a substitute for official academic advising.
 
 ---
-
-*Author: Shirley Wu — UC Berkeley · Molecular & Cell Biology, Data Science, Bioinformatics*

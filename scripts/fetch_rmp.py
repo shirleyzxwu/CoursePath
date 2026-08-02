@@ -1,20 +1,16 @@
 """
-scripts/fetch_rmp.py — RateMyProfessors cache builder.
+RateMyProfessors cache builder.
 
 Reads the instructor list from courses.json, scrapes RMP for each one,
-and writes data/rmp_cache.json (gitignored).
+and writes data/rmp_cache.json.
 
 Run once per semester, or whenever the instructor list changes.
 
 Usage:
     conda activate coursepath
     python scripts/fetch_rmp.py [--force]
-
-    --force   re-scrape instructors that are already in rmp_cache.json
+    re-scrape instructors that are already in rmp_cache.json
               (default: skip existing entries to save time)
-
-Dependencies:
-    pip install RateMyProfessorAPI   (already in environment.yml)
 """
 
 import json
@@ -133,10 +129,10 @@ def run(force: bool = False) -> None:
 
         cache[name] = result
 
-        # Write after every entry — crash-safe
+        # Write after every entry
         save_cache(cache)
 
-        # Stay well inside RMP's rate limits
+        # Stay within RMP's rate limits
         if i < len(to_scrape):
             time.sleep(1.2)
 

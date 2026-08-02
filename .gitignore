@@ -1,9 +1,9 @@
-# Derived data — regenerate locally with the scripts
+# Derived data (regenerate locally with the scripts)
 coursepath/data/embeddings.npz
 coursepath/data/rmp_cache.json
 coursepath/data/sis_classes_raw.json
 
-# API keys — never commit
+# API keys
 .env
 *.env
 

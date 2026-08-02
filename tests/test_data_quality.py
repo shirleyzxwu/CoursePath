@@ -1,5 +1,5 @@
 """
-tests/test_data_quality.py — Tests for coursepath/data_quality.py
+Tests for coursepath/data_quality.py
 
 Run with:
     pytest tests/test_data_quality.py -v
@@ -27,7 +27,7 @@ from coursepath.data_quality import (
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fixtures — course records at different quality tiers
+# Fixtures: course records at different quality tiers
 # ─────────────────────────────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -138,7 +138,7 @@ class TestSignalProfessorRating:
     def test_missing_rating(self):
         assert _signal_professor_rating({}) == 0.0
     def test_rating_no_num_ratings(self):
-        # Rating exists but num_ratings absent → partial credit
+        # Rating exists but num_ratings absent gives partial credit
         assert _signal_professor_rating({"professor_rating": 4.0}) == 0.5
     def test_one_rating(self):
         assert _signal_professor_rating({"professor_rating": 4.0, "num_ratings": 1}) == 0.4
@@ -296,7 +296,7 @@ class TestPlanQualitySummary:
         assert result["label"] == quality_label(result["mean"])
 
     def test_falls_back_to_scoring_if_no_data_quality_field(self, minimal_course):
-        # course without pre-computed data_quality — should compute on the fly
+        # course without pre-computed data_quality would compute immediately
         courses = {"COURSE X": minimal_course}  # no "data_quality" key
         result = plan_quality_summary(["COURSE X"], courses)
         assert 0.0 <= result["mean"] <= 1.0

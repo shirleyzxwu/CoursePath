@@ -11,14 +11,12 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Optional
 
-# Optional semantic profile builder (requires embedder index to be built)
 try:
     from coursepath.embedder import profile_from_text, profile_from_course_names
     EMBEDDER_AVAILABLE = True
 except ImportError:
     EMBEDDER_AVAILABLE = False
 
-# Optional data quality module
 try:
     from coursepath.data_quality import score_course, plan_quality_summary
     DATA_QUALITY_AVAILABLE = True
@@ -31,6 +29,9 @@ except ImportError:
 
 with open("coursepath/data/courses.json") as f:
     COURSES: dict = json.load(f)
+
+with open("coursepath/data/requirements.json") as f:
+    REQUIREMENTS: dict = json.load(f)
 
 
 # ─────────────────────────────────────────────
@@ -158,6 +159,76 @@ class RequirementTracker:
 
 
 # ─────────────────────────────────────────────
+# Requirement tracker builder
+# ─────────────────────────────────────────────
+
+def build_tracker(major: str, track: str = "default") -> "RequirementTracker":
+    """
+    Build a RequirementTracker from requirements.json for a given major+track.
+
+    Supports:
+      build_tracker("DATA_BA")
+      build_tracker("MCB", "GGED_track1")
+      build_tracker("BIOE_BS", "computational_biology")
+
+    Only courses present in COURSES are wired up; courses noted as
+    'not in courses.json' contribute 0 to completion ratio until added.
+    """
+    major_data = REQUIREMENTS.get(major)
+    if major_data is None:
+        raise ValueError(f"Unknown major '{major}'. Available: {list_majors()}")
+
+    tracks_data = major_data.get("tracks", {})
+    lower_shared = major_data.get("lower_div_shared", {})
+
+    if track not in tracks_data and track != "default":
+        raise ValueError(
+            f"Unknown track '{track}' for {major}. "
+            f"Available: {list(tracks_data.keys())}"
+        )
+
+    chosen = tracks_data.get(track, tracks_data.get("default", {}))
+
+    all_buckets_raw: dict = {}
+    for section_name, section in chosen.items():
+        if isinstance(section, dict) and ("count" in section or "options" in section):
+            all_buckets_raw[section_name] = section
+        elif isinstance(section, dict):
+            for bucket_name, bucket in section.items():
+                if isinstance(bucket, dict) and "count" in bucket:
+                    all_buckets_raw[f"{section_name}.{bucket_name}"] = bucket
+
+    for bucket_name, bucket in lower_shared.items():
+        if isinstance(bucket, dict) and "count" in bucket:
+            all_buckets_raw[f"lower.{bucket_name}"] = bucket
+
+    buckets: dict[str, int] = {}
+    course_to_buckets: dict[str, list[str]] = defaultdict(list)
+
+    for bucket_name, bucket_def in all_buckets_raw.items():
+        count = bucket_def.get("count", 1)
+        buckets[bucket_name] = count
+        for course in bucket_def.get("options", []):
+            if course in COURSES:
+                course_to_buckets[course].append(bucket_name)
+
+    return RequirementTracker(
+        buckets=buckets,
+        course_to_buckets=dict(course_to_buckets),
+    )
+
+
+def list_majors() -> list[str]:
+    """Return all major keys available in requirements.json."""
+    return [k for k in REQUIREMENTS if not k.startswith("_")]
+
+
+def list_tracks(major: str) -> list[str]:
+    """Return all track keys for a given major."""
+    return list(REQUIREMENTS.get(major, {}).get("tracks", {}).keys())
+
+
+# ─────────────────────────────────────────────
 # Scoring
 # ─────────────────────────────────────────────
 
@@ -205,7 +276,7 @@ def score_schedule(
         weight_sum += dq
     interest = (interest_total / weight_sum) if weight_sum > 0 else 0.0
 
-    # ── Difficulty (raw average — confidence-agnostic) ────────────────────
+    # ── Difficulty (confidence-agnostic) ────────────────────
     avg_diff = sum(COURSES[c]["difficulty"] for c in schedule) / n
 
     # ── Professor rating (confidence-weighted) ────────────────────────────
@@ -336,7 +407,7 @@ def plan_four_years(
     initial_completed: Optional[set[str]] = None,
     weights: Optional[dict[str, float]] = None,
     min_units: int = 12,
-    max_units: int = 20,
+    max_units: int = 18,
     beam_width: int = 5,
     top_k_per_semester: int = 8,
     req_tracker: Optional[RequirementTracker] = None,
@@ -487,16 +558,57 @@ if __name__ == "__main__":
 
     weights = get_weights()
 
-    mode = input("\nMode — (1) single semester  (2) four-year plan [1/2]: ").strip()
+    # ── Completed courses ─────────────────────────────────────────────────────
+    print("\nEnter courses you have already completed (comma-separated),")
+    print("or leave blank to start from scratch.")
+    print(f"Known courses: {', '.join(sorted(COURSES.keys())[:8])} …")
+    raw_completed = input("> ").strip()
+    completed: set[str] = set()
+    if raw_completed:
+        for c in [x.strip() for x in raw_completed.split(",")]:
+            if c in COURSES:
+                completed.add(c)
+            elif c:
+                print(f"  ⚠ '{c}' not in courses.json — skipped")
+    if completed:
+        print(f"  Loaded {len(completed)} completed courses: {', '.join(sorted(completed))}")
+
+    # ── Major + track selection ───────────────────────────────────────────────
+    majors = list_majors()
+    print(f"\nAvailable majors: {', '.join(majors)}")
+    print("Enter major key (e.g. DATA_BA, MCB, BIOE_BS) or leave blank to skip:")
+    chosen_major = input("> ").strip().upper() or None
+
+    req_tracker = None
+    if chosen_major and chosen_major in majors:
+        tracks = list_tracks(chosen_major)
+        if tracks and tracks != ["default"]:
+            print(f"Available tracks: {', '.join(tracks)}")
+            chosen_track = input("Enter track key or leave blank for default: ").strip() or "default"
+        else:
+            chosen_track = "default"
+        try:
+            req_tracker = build_tracker(chosen_major, chosen_track)
+            print(f"  Tracking {len(req_tracker.buckets)} requirement buckets for {chosen_major} / {chosen_track}")
+        except ValueError as e:
+            print(f"  ⚠ {e} — proceeding without requirement tracking")
+    elif chosen_major:
+        print(f"  ⚠ '{chosen_major}' not recognised — proceeding without requirement tracking")
+
+    mode = input("\nMode — (1) single semester  (2) multi-semester plan [1/2]: ").strip()
 
     if mode == "2":
-        print("\nGenerating four-year plan (beam search)…")
+        n_sems = input("How many semesters to plan (default 8 = 4 years)? ").strip()
+        n_sems = int(n_sems) if n_sems.isdigit() else 8
+        print(f"\nGenerating {n_sems//2}-year plan (beam search)…")
         plans = plan_four_years(
             interest_profile=interest_profile,
+            initial_completed=completed,
             weights=weights,
             min_units=12,
             max_units=18,
             beam_width=3,
+            req_tracker=req_tracker,
         )
         for i, plan in enumerate(plans, 1):
             print(f"\n{'─'*60}\nPlan {i}")
@@ -504,11 +616,12 @@ if __name__ == "__main__":
     else:
         term = input("Term (Fall/Spring, or leave blank for any): ").strip() or None
         plans = generate_semester_plans(
-            completed=set(),
+            completed=completed,
             interest_profile=interest_profile,
             term=term,
             weights=weights,
             top_k=5,
+            req_tracker=req_tracker,
         )
         print("\nTop 5 Recommended Schedules:")
         for i, plan in enumerate(plans, 1):

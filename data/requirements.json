@@ -1,0 +1,356 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "last_verified": "2026-08",
+    "sources": {
+      "CS_BA":   "https://eecs.berkeley.edu/resources/undergrads/cs/",
+      "EECS_BS": "https://eecs.berkeley.edu/resources/undergrads/eecs-2/",
+      "DATA_BA": "https://cdss.berkeley.edu/dsus/academics/majorrequirements",
+      "BIOE_BS": "https://bioeng.berkeley.edu/undergrad/program",
+      "MCB":     "https://mcb.berkeley.edu/undergrad/major/major-requirements/requirements"
+    },
+    "notes": "Requirements change annually. Always verify with department advisors. 'options' lists courses in courses.json that satisfy a bucket; courses outside courses.json are noted in comments but not tracked by the planner."
+  },
+
+  "CS_BA": {
+    "name": "Computer Science B.A.",
+    "college": "CDSS",
+    "description": "CS BA via CDSS (L&S). More breadth requirements, fewer math/science requirements than EECS BS.",
+    "tracks": {
+      "default": {
+        "lower_div": {
+          "calc_1":           { "count": 1, "options": ["MATH 51"], "note": "AP AB/BC ≥3 accepted" },
+          "calc_2":           { "count": 1, "options": ["MATH 52"], "note": "AP BC 5 accepted" },
+          "linear_algebra":   { "count": 1, "options": ["MATH 54", "MATH 56"], "note": "ELENG 66 also accepted until Fall 2026" },
+          "program_struct":   { "count": 1, "options": ["COMPSCI 61A"] },
+          "data_structures":  { "count": 1, "options": ["COMPSCI 61B"] },
+          "machine_struct":   { "count": 1, "options": ["COMPSCI 61C"] },
+          "discrete_math":    { "count": 1, "options": ["COMPSCI 70"] }
+        },
+        "upper_div": {
+          "note": "20 upper-division units required total. CS 170 is the only specifically required upper-div course.",
+          "cs_theory":  { "count": 1, "options": ["COMPSCI 170"], "required": true },
+          "design":     {
+            "count": 1,
+            "note": "4 units from: CS 152,160,161,162,164,168,169A,169L,180,182,184,185,186 or EE C128,130,140,143,192 or EECS C106A/B,149,151",
+            "options": ["COMPSCI 61C"],
+            "note2": "Approximate match from courses.json; most design courses are not in courses.json"
+          },
+          "upper_cs_8":  { "count": 2, "note": "8 units of upper-div CS (COMPSCI-prefix) courses", "options": ["COMPSCI 170", "COMPSCI 61C"] },
+          "upper_cs_ee_8": { "count": 2, "note": "8 units of upper-div CS/EE/EECS courses", "options": ["COMPSCI 170"] },
+          "tech_elective": {
+            "count": 1,
+            "note": "4 units non-CS technical elective (for Fall 22+ admits). Options include DATA C100, DATA C101, DATA C102, DATA C104, DATA C140, STAT 134, MCELLBI C148, BIOENG 145 etc.",
+            "options": ["DATA C100", "DATA C101", "DATA C102", "DATA C104", "DATA C140", "STAT 134"]
+          }
+        }
+      }
+    }
+  },
+
+  "EECS_BS": {
+    "name": "Electrical Engineering and Computer Sciences B.S.",
+    "college": "College of Engineering",
+    "description": "EECS BS via CoE. More rigorous math/science foundation than CS BA. Leads to BS degree.",
+    "tracks": {
+      "default": {
+        "lower_div": {
+          "calc_1":         { "count": 1, "options": ["MATH 51"] },
+          "calc_2":         { "count": 1, "options": ["MATH 52"] },
+          "linear_algebra": { "count": 1, "options": ["MATH 54", "MATH 56"], "note": "ELENG 16A+16B also accepted" },
+          "physics_1":      { "count": 1, "options": ["PHYSICS 7A", "PHYSICS 8A"] },
+          "physics_2":      { "count": 1, "options": ["PHYSICS 7B", "PHYSICS 8B"] },
+          "program_struct": { "count": 1, "options": ["COMPSCI 61A"] },
+          "data_structures":{ "count": 1, "options": ["COMPSCI 61B"] },
+          "machine_struct": { "count": 1, "options": ["COMPSCI 61C"] },
+          "discrete_math":  { "count": 1, "options": ["COMPSCI 70"] }
+        },
+        "upper_div": {
+          "note": "20 upper-division EECS units required. 4 must be a design course. Ethics course required.",
+          "cs_theory":     { "count": 1, "options": ["COMPSCI 170"], "required": true },
+          "design":        {
+            "count": 1,
+            "note": "CS 152,160,161,162,164,168,169A,180,182,184,185,186 or EE C128,130,140,143,192 or EECS C106A/B,149,151",
+            "options": ["COMPSCI 61C"]
+          },
+          "ud_eecs_8":     { "count": 2, "note": "8 additional units of upper-div CS courses", "options": ["COMPSCI 170"] },
+          "ud_cs_ee_8":    { "count": 2, "note": "8 units upper-div CS/EE/EECS", "options": ["COMPSCI 170"] },
+          "ethics":        {
+            "count": 1,
+            "note": "CS 195 or DATA C104 or HISTORY C184D or ISF 100D/100G or MEDIAST 104D",
+            "options": ["DATA C104"]
+          }
+        }
+      }
+    }
+  },
+
+  "DATA_BA": {
+    "name": "Data Science B.A.",
+    "college": "CDSS",
+    "description": "The Data Science BA has no sub-tracks; students choose one Domain Emphasis.",
+    "tracks": {
+      "default": {
+        "lower_div": {
+          "foundations":      { "count": 1, "options": ["DATA C8", "STAT 20"] },
+          "calc_1":           { "count": 1, "options": ["MATH 51"] },
+          "calc_2":           { "count": 1, "options": ["MATH 52"] },
+          "linear_algebra":   { "count": 1, "options": ["MATH 54", "MATH 56"] },
+          "program_struct":   { "count": 1, "options": ["COMPSCI 61A", "DATA C88C"], "note": "ENGIN 7 accepted if completed before Fall 2026" },
+          "data_structures":  { "count": 1, "options": ["COMPSCI 61B"] },
+          "domain_lower":     { "count": 1, "note": "1 lower-div course from chosen Domain Emphasis", "options": ["BIOLOGY 1A & BIOLOGY 1AL", "BIOLOGY 1B", "MATH 53"] }
+        },
+        "upper_div": {
+          "note": "Minimum 8 upper-div courses, 28 upper-div units total.",
+          "core":       { "count": 1, "options": ["DATA C100"], "required": true },
+          "probability":{ "count": 1, "options": ["DATA C140", "STAT 134"], "note": "EECS 126, IND ENG 172, MATH 106 also accepted" },
+          "CID":        { "count": 2, "min_units": 7, "options": ["DATA C101", "DATA C102", "COMPSCI 170", "DATA 144", "BIOENG 145", "MCELLBI C148"], "note": "2 courses ≥7 units from long approved list" },
+          "MLDM":       { "count": 1, "options": ["DATA C102"], "note": "COMPSCI 189, DATA C182, STAT 154, IND ENG 142A also accepted" },
+          "HCE":        { "count": 1, "options": ["DATA C104"], "note": "Human Contexts & Ethics: DATA C104, PHILOS 121, ANTHRO 168 etc." },
+          "domain_upper":{ "count": 2, "note": "2 upper-div courses from chosen Domain Emphasis (see domain_emphases below)", "options": ["MCELLBI C148", "MCELLBI 104", "BIOENG 145", "BIOENG C131", "MCELLBI 153"] }
+        }
+      }
+    },
+    "domain_emphases": {
+      "computational_molecular_genomic_biology": {
+        "name": "Computational Methods in Molecular and Genomic Biology",
+        "lower_div_options": ["BIOLOGY 1A & BIOLOGY 1AL", "BIOLOGY 1B", "MATH 53"],
+        "upper_div_options": [
+          "BIOENG C131", "BIOENG 145", "BIOENG C149",
+          "MCELLBI C100A", "MCELLBI 102", "MCELLBI 104",
+          "MCELLBI 132", "MCELLBI C148", "MCELLBI 149", "MCELLBI 153"
+        ],
+        "note": "Also accepts CHEM 135, INTEGBI 120, INTEGBI 134L, INTEGBI 141, INTEGBI 161, MATH 127, CMPBIO 156, CMPBIO C176"
+      },
+      "evolution_biodiversity": {
+        "name": "Evolution and Biodiversity",
+        "lower_div_options": ["BIOLOGY 1A & BIOLOGY 1AL", "BIOLOGY 1B"],
+        "upper_div_options": ["MCELLBI 104"],
+        "note": "Also accepts ESPM C105, ESPM 108B, ESPM C125, ESPM 152, INTEGBI C109, INTEGBI 113L, INTEGBI 160, INTEGBI 161, INTEGBI 162, INTEGBI 169, INTEGBI 172"
+      },
+      "human_population_health": {
+        "name": "Human and Population Health",
+        "lower_div_options": ["BIOLOGY 1A & BIOLOGY 1AL", "BIOLOGY 1B"],
+        "upper_div_options": ["MCELLBI 150 & MCELLBI 150L"],
+        "note": "Also accepts DEMOG 110, DEMOG 130, INTEGBI 114 and public health courses"
+      },
+      "neurosciences": {
+        "name": "Neurosciences",
+        "lower_div_options": [],
+        "upper_div_options": [],
+        "note": "Lower: NEU C61, NEU/PSYCH C64. Upper: NEU 100A, BIOENG C171/NEU C124, COGSCI C127, INTEGBI 139"
+      },
+      "ecology_environment": {
+        "name": "Ecology and Environment",
+        "lower_div_options": [],
+        "upper_div_options": [],
+        "note": "Lower: ESPM 2, ESPM 6, ESPM 15, GEOG 40. Upper: ESPM/GEOG/ENV courses"
+      }
+    }
+  },
+
+  "BIOE_BS": {
+    "name": "Bioengineering B.S.",
+    "college": "College of Engineering",
+    "description": "120-unit BS program with 4 concentrations. All share the same lower-division core.",
+    "tracks": {
+      "shared_lower_div": {
+        "note": "All concentrations share these lower-division requirements",
+        "calc_1":       { "count": 1, "options": ["MATH 51"] },
+        "calc_2":       { "count": 1, "options": ["MATH 52"] },
+        "calc_3":       { "count": 1, "options": ["MATH 53"] },
+        "linear_alg":   { "count": 1, "options": ["MATH 54"] },
+        "physics_1":    { "count": 1, "options": ["PHYSICS 7A"] },
+        "physics_2":    { "count": 1, "options": ["PHYSICS 7B"] },
+        "chem_1":       { "count": 1, "options": ["CHEM 1A & CHEM 1AL"] },
+        "chem_2":       { "count": 1, "options": ["CHEM 3A & CHEM 3AL"] },
+        "programming":  { "count": 1, "options": ["ENGIN 7", "COMPSCI 61A"] },
+        "bioe_core":    { "count": 2, "options": ["BIOENG 103"], "note": "BIOENG 10, 11, 25, 26, 103 are required" }
+      },
+      "bioinstrumentation": {
+        "name": "Bioinstrumentation",
+        "upper_div": {
+          "bioe_fundamentals": { "count": 2, "options": ["BIOENG C131", "BIOENG C142", "BIOENG C149", "BIOENG 103"], "note": "2 BioE fundamentals courses" },
+          "bioe_design":       { "count": 1, "options": [], "note": "1 BioE design course (BIOENG 192/194)" },
+          "bioe_lab":          { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"], "note": "1 BioE lab course" },
+          "tech_topics":       { "count": 3, "options": ["BIOENG C131", "BIOENG C142", "BIOENG C149", "BIOENG 145", "MCELLBI C148", "MCELLBI 102"], "note": "Technical Topics: 36 units total from approved list" }
+        }
+      },
+      "computational_biology": {
+        "name": "Computational Biology",
+        "upper_div": {
+          "bioe_fundamentals": { "count": 2, "options": ["BIOENG C131", "BIOENG C149", "BIOENG 145"] },
+          "bioe_design":       { "count": 1, "options": [], "note": "1 BioE design course" },
+          "bioe_lab":          { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L", "MCELLBI 153L"] },
+          "tech_topics":       {
+            "count": 3,
+            "options": ["BIOENG C131", "BIOENG C149", "BIOENG 145", "MCELLBI C148", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 153", "DATA C100", "STAT 134", "COMPSCI 61B"],
+            "note": "Technical topics draw heavily from CS, Stats, and MCB courses"
+          }
+        }
+      },
+      "synthetic_systems_biology": {
+        "name": "Synthetic and Systems Biology",
+        "upper_div": {
+          "bioe_fundamentals": { "count": 2, "options": ["BIOENG C131", "BIOENG C142", "BIOENG 103"] },
+          "bioe_design":       { "count": 1, "options": [] },
+          "bioe_lab":          { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153L"] },
+          "tech_topics":       {
+            "count": 3,
+            "options": ["BIOENG C131", "MCELLBI C100A", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI C148", "MCELLBI 132", "MCELLBI 150 & MCELLBI 150L"]
+          }
+        }
+      },
+      "cell_tissue_engineering": {
+        "name": "Cell and Tissue Engineering",
+        "upper_div": {
+          "bioe_fundamentals": { "count": 2, "options": ["BIOENG C142", "BIOENG 103"] },
+          "bioe_design":       { "count": 1, "options": [] },
+          "bioe_lab":          { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L", "MCELLBI 150 & MCELLBI 150L"] },
+          "tech_topics":       {
+            "count": 3,
+            "options": ["MCELLBI C100A", "MCELLBI 100B", "MCELLBI 102", "MCELLBI 110", "MCELLBI 150 & MCELLBI 150L"]
+          }
+        }
+      }
+    }
+  },
+
+  "MCB": {
+    "name": "Molecular and Cell Biology B.A.",
+    "college": "College of Letters & Science",
+    "description": "5 emphases, each with 1-3 tracks. All share the same lower-division core (except BBS Track 2).",
+    "lower_div_shared": {
+      "math":     { "count": 2, "options": ["MATH 51", "MATH 52"], "note": "Math 10A+10B also accepted; AP Calculus NOT accepted" },
+      "chem_1":   { "count": 1, "options": ["CHEM 1A & CHEM 1AL"] },
+      "chem_2":   { "count": 1, "options": ["CHEM 3A & CHEM 3AL"] },
+      "chem_3":   { "count": 1, "note": "CHEM 3B/3BL required — not in courses.json" },
+      "bio_1":    { "count": 1, "options": ["BIOLOGY 1A & BIOLOGY 1AL"] },
+      "bio_2":    { "count": 1, "options": ["BIOLOGY 1B"] },
+      "physics_1":{ "count": 1, "options": ["PHYSICS 8A", "PHYSICS 7A"] },
+      "physics_2":{ "count": 1, "options": ["PHYSICS 8B", "PHYSICS 7B"] }
+    },
+    "tracks": {
+      "BBS_track1": {
+        "name": "Biochemistry, Biophysics & Structural Biology — Track 1",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI C100A"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 100B"] },
+          "req_3": { "count": 1, "options": ["MCELLBI 110"] },
+          "req_4": { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L", "MCELLBI C148"] },
+          "lab":   { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"], "note": "MCB C110L or MCB 170L also accepted" },
+          "elective": { "count": 1, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI C148", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153"], "note": "1 BBS elective from approved list" }
+        }
+      },
+      "BBS_track2": {
+        "name": "Biochemistry, Biophysics & Structural Biology — Track 2: Biological Chemistry",
+        "note": "Different lower-div: replaces CHEM 3B with CHEM 4A/4B series",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI C100A"] },
+          "req_2": { "count": 1, "note": "CHEM 130B — not in courses.json" },
+          "req_3": { "count": 1, "note": "CHEM 135 — not in courses.json" },
+          "req_4": { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L", "MCELLBI C100A"] },
+          "lab":   { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"] },
+          "elective": { "count": 1, "options": ["MCELLBI C100A", "MCELLBI 100B", "MCELLBI 104", "MCELLBI 110", "MCELLBI C148"] }
+        }
+      },
+      "CDP_track1": {
+        "name": "Cell Biology, Development & Physiology — Track 1: Cell & Systems Biology",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI 102"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 140 & MCELLBI 140L"] },
+          "req_3": { "count": 1, "note": "MCB C130 — not in courses.json" },
+          "lab":   { "count": 1, "note": "MCB 133L or MCB 170L — not in courses.json" },
+          "elective_a": { "count": 2, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153", "DATA C100"], "note": "CDP Elective A: biology/STEM breadth" }
+        }
+      },
+      "CDP_track2": {
+        "name": "Cell Biology, Development & Physiology — Track 2: Medical Biology & Physiology",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI 102"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 104"] },
+          "req_3": { "count": 1, "note": "MCB 136 — not in courses.json" },
+          "lab":   { "count": 1, "note": "MCB 133L or MCB 170L — not in courses.json" },
+          "elective_b": { "count": 2, "options": ["MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI C148", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153"], "note": "CDP Elective B: physiology/disease emphasis" }
+        }
+      },
+      "GGED_track1": {
+        "name": "Genetics, Genomics, Evolution & Development — Track 1: Genetics, Genomics & Development",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI C100A"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"] },
+          "req_3": { "count": 1, "options": ["MCELLBI 110"] },
+          "lab":   { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"] },
+          "elective_a": { "count": 1, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153", "DATA C100"], "note": "GGED Elective A: biology/STEM breadth" },
+          "elective_b": { "count": 1, "options": ["MCELLBI 132", "MCELLBI 141", "MCELLBI C148", "MCELLBI 149", "MCELLBI 153", "BIOENG C131", "BIOENG 145", "BIOENG C149"], "note": "GGED Elective B: genetics/genomics/evolution/dev breadth" }
+        }
+      },
+      "GGED_track2": {
+        "name": "Genetics, Genomics, Evolution & Development — Track 2: Developmental Genetics",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI 102"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 140 & MCELLBI 140L"] },
+          "req_3": { "count": 1, "options": ["MCELLBI 141"] },
+          "lab":   { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"] },
+          "elective_a": { "count": 1, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "DATA C100"] },
+          "elective_b": { "count": 1, "options": ["MCELLBI 132", "MCELLBI 141", "MCELLBI C148", "MCELLBI 149", "MCELLBI 153", "BIOENG C131", "BIOENG 145", "BIOENG C149"] }
+        }
+      },
+      "IMM_track1": {
+        "name": "Immunology & Molecular Medicine — Track 1: Immunology & Pathogenesis",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI C100A"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 140 & MCELLBI 140L"] },
+          "req_3": { "count": 1, "options": ["MCELLBI 110"] },
+          "req_4": { "count": 1, "options": ["MCELLBI 150 & MCELLBI 150L"] },
+          "lab":   { "count": 1, "options": ["MCELLBI 150 & MCELLBI 150L"] },
+          "elective_c": { "count": 1, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153"] }
+        }
+      },
+      "IMM_track2": {
+        "name": "Immunology & Molecular Medicine — Track 2: Infectious Disease",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI 102"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 140 & MCELLBI 140L"] },
+          "req_3": { "count": 1, "options": ["MCELLBI 150 & MCELLBI 150L"] },
+          "lab":   { "count": 1, "options": ["MCELLBI 150 & MCELLBI 150L"] },
+          "elective_a": { "count": 1, "options": ["MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L"] },
+          "elective_b": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI C148", "MCELLBI 153"] }
+        }
+      },
+      "IMM_track3": {
+        "name": "Immunology & Molecular Medicine — Track 3: Immunology & Molecular Medicine",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI 102"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 140 & MCELLBI 140L"] },
+          "req_3": { "count": 1, "options": ["MCELLBI 150 & MCELLBI 150L"] },
+          "req_4": { "count": 1, "options": ["MCELLBI 153"] },
+          "lab":   { "count": 1, "options": ["MCELLBI 153L", "MCELLBI 150 & MCELLBI 150L"] },
+          "elective_d": { "count": 1, "options": ["MCELLBI 102", "MCELLBI 110", "MCELLBI 132", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153"] }
+        }
+      },
+      "MTX_track1": {
+        "name": "Molecular Therapeutics — Track 1: Molecular Therapeutics",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI C100A"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"] },
+          "req_3": { "count": 1, "note": "MCB 120 — not in courses.json" },
+          "lab":   { "count": 1, "note": "MCB 120L — not in courses.json" },
+          "elective_a": { "count": 1, "options": ["MCELLBI C100A", "MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153"] },
+          "elective_b": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI C148", "MCELLBI 153"] }
+        }
+      },
+      "MTX_track2": {
+        "name": "Molecular Therapeutics — Track 2: Therapeutics and Disease",
+        "upper_div": {
+          "req_1": { "count": 1, "options": ["MCELLBI 102"] },
+          "req_2": { "count": 1, "options": ["MCELLBI 104"] },
+          "req_3": { "count": 1, "note": "MCB 120 — not in courses.json" },
+          "lab":   { "count": 1, "note": "MCB 120L — not in courses.json" },
+          "elective_a": { "count": 1, "options": ["MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153"] },
+          "elective_b": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 110", "MCELLBI C148", "MCELLBI 153"] }
+        }
+      }
+    }
+  }
+}

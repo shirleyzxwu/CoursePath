@@ -1,5 +1,5 @@
 """
-scripts/merge_sources.py — Merge external data sources into courses.json.
+Merge external data sources into courses.json.
 
 Reads:
   data/rmp_cache.json         (from fetch_rmp.py)
@@ -11,7 +11,7 @@ Updates courses.json in-place with:
   - grade_dist                     (from SIS grade distributions)
 
 Existing hand-authored fields (prerequisites, topics, units) are never
-overwritten — external data only fills in or updates the signal fields.
+overwritten; external data only fills in or updates the signal fields.
 
 Usage:
     python scripts/merge_sources.py [--rmp-only] [--sis-only]
@@ -66,7 +66,7 @@ def merge_rmp(courses: dict, rmp_cache: dict) -> int:
         avg_rating   = sum(ratings) / total_weight
         total_n      = sum(w for w in weights)
 
-        # Only overwrite if we have more data than before
+        # Only overwrite if have more data than before
         old_n = data.get("num_ratings", 0)
         if total_n >= old_n:
             courses[name]["professor_rating"] = round(avg_rating, 2)
@@ -83,13 +83,13 @@ def merge_sis(courses: dict, sis_raw: dict) -> int:
     Update sis_verified and grade_dist from SIS raw data.
 
     SIS course IDs look like 'COMPSCI-061A'; courses.json keys look like
-    'COMPSCI 61A'.  We normalise both to uppercase, no leading zeros,
+    'COMPSCI 61A'.  Normalised both to uppercase, no leading zeros,
     space-separated for matching.
     """
     def normalise(s: str) -> str:
         return s.upper().replace("-", " ").lstrip("0").strip()
 
-    # Build a lookup from normalised SIS course ID → grade distribution
+    # Build a lookup from normalised SIS course ID to grade distribution
     grade_lookup: dict[str, dict] = {}
     for course_id, dist in sis_raw.get("grade_distributions", {}).items():
         grade_lookup[normalise(course_id)] = dist

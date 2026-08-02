@@ -1,19 +1,16 @@
 """
-annotator.py — LLM-powered course annotation pipeline.
+LLM-powered course annotation pipeline.
 
 Reads courses.json + tag_taxonomy.json, calls the Anthropic API once per
 unannotated course, and writes the enriched records back to courses.json.
 
 Run once (or re-run on new courses) to populate:
-  - "descriptors": list[str]   — free-form keywords from course description
-  - "topics": dict[str,float]  — extended tag weights using the full taxonomy
-  - "manually_reviewed": bool  — always False from this script; flip manually
-
-Environment variables required:
-  ANTHROPIC_API_KEY   — your Anthropic API key (never commit this)
+  - "descriptors": list[str]; free-form keywords from course description
+  - "topics": dict[str,float]; extended tag weights using the full taxonomy
+  - "manually_reviewed": bool; always False from this script; flip manually
 
 Usage:
-  python -m coursepath.annotator [--force]   # --force re-annotates all courses
+  python -m coursepath.annotator [--force]   # re-annotates all courses
 """
 
 import json
@@ -170,7 +167,6 @@ def run(force: bool = False) -> None:
         with open(COURSES_PATH, "w") as f:
             json.dump(courses, f, indent=2)
 
-        # Polite rate limiting — 1 request/second is well within Sonnet limits
         if i < len(needs_annotation):
             time.sleep(1.0)
 
@@ -186,3 +182,4 @@ if __name__ == "__main__":
                         help="Re-annotate all courses, not just unannotated ones")
     args = parser.parse_args()
     run(force=args.force)
+    

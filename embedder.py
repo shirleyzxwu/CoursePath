@@ -1,5 +1,5 @@
 """
-embedder.py — Semantic interest profile builder.
+Semantic interest profile builder.
 
 Two responsibilities:
 
@@ -15,15 +15,7 @@ Two responsibilities:
      returns a normalized interest profile dict {tag: weight} ready to
      pass directly into the planner's scoring model.
 
-Model choice:
-  all-MiniLM-L6-v2   — fast (80ms/sentence on CPU), 384-dim, MIT license,
-                        available on HuggingFace without an API key.
-                        Best default for offline/local use.
-
-  If you have an Anthropic API key and prefer not to install
-  sentence-transformers, set COURSEPATH_EMBED_BACKEND=anthropic
-  and the module will use voyage-3-lite embeddings instead (faster
-  for large batches, requires network).
+Model choice: all-MiniLM-L6-v2
 
 Dependencies:
   pip install sentence-transformers numpy          # default backend
@@ -63,11 +55,6 @@ def _st_embed(texts: list[str]) -> np.ndarray:
     vecs = model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
     return np.array(vecs, dtype=np.float32)
 
-
-# ─────────────────────────────────────────────
-# Backend: Anthropic voyage-3-lite
-# ─────────────────────────────────────────────
-
 def _anthropic_embed(texts: list[str]) -> np.ndarray:
     """
     Embed using Anthropic's voyage-3-lite model via the anthropic client.
@@ -104,8 +91,8 @@ def embed(texts: list[str]) -> np.ndarray:
 
 def cosine_similarity(query_vec: np.ndarray, matrix: np.ndarray) -> np.ndarray:
     """
-    query_vec: (D,)  — already L2-normalised
-    matrix:    (N, D) — already L2-normalised
+    query_vec: (D,)  already L2-normalised
+    matrix:    (N, D) already L2-normalised
     Returns (N,) similarity scores in [-1, 1].
 
     Because both sides are unit-norm, this reduces to a dot product:
