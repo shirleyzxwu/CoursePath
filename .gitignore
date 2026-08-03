@@ -1,0 +1,27 @@
+# Derived data (regenerate locally with the scripts)
+coursepath/data/embeddings.npz
+coursepath/data/rmp_cache.json
+coursepath/data/sis_classes_raw.json
+
+# API keys
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Conda / venv
+.conda/
+env/
+venv/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
