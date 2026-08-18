@@ -261,7 +261,7 @@
           "req_2": { "count": 1, "options": ["MCELLBI 104", "MCELLBI 140 & MCELLBI 140L"] },
           "req_3": { "count": 1, "note": "MCB C130 — not in courses.json" },
           "lab":   { "count": 1, "note": "MCB 133L or MCB 170L — not in courses.json" },
-          "elective_a": { "count": 2, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153", "DATA C100"], "note": "CDP Elective A: biology/STEM breadth" }
+          "elective_a": { "count": 2, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153", "DATA C100"], "note": "CDP Elective A: biology breadth" }
         }
       },
       "CDP_track2": {
@@ -281,7 +281,7 @@
           "req_2": { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"] },
           "req_3": { "count": 1, "options": ["MCELLBI 110"] },
           "lab":   { "count": 1, "options": ["MCELLBI 140 & MCELLBI 140L"] },
-          "elective_a": { "count": 1, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153", "DATA C100"], "note": "GGED Elective A: biology/STEM breadth" },
+          "elective_a": { "count": 1, "options": ["MCELLBI 100B", "MCELLBI 102", "MCELLBI 104", "MCELLBI 110", "MCELLBI 132", "MCELLBI 141", "MCELLBI 150 & MCELLBI 150L", "MCELLBI 153", "DATA C100"], "note": "GGED Elective A: biology breadth" },
           "elective_b": { "count": 1, "options": ["MCELLBI 132", "MCELLBI 141", "MCELLBI C148", "MCELLBI 149", "MCELLBI 153", "BIOENG C131", "BIOENG 145", "BIOENG C149"], "note": "GGED Elective B: genetics/genomics/evolution/dev breadth" }
         }
       },

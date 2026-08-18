@@ -11,7 +11,7 @@
     "difficulty": 3.1,
     "topics": {
       "python": 0.5,
-      "statistics": 0.5
+      "statistics": 0.4
     },
     "instructors": [
       "John DeNero"
@@ -19,7 +19,15 @@
     "num_ratings": 282,
     "rmp_difficulty": 3.5,
     "would_take_again": 85.0,
-    "data_quality": 0.31
+    "data_quality": 0.51,
+    "descriptors": [
+      "data analysis",
+      "machine learning algorithms",
+      "statistical modeling",
+      "data visualization",
+      "computational methods"
+    ],
+    "manually_reviewed": false
   },
   "DATA C88C": {
     "units": 3,
@@ -42,7 +50,15 @@
     "num_ratings": 282,
     "rmp_difficulty": 3.5,
     "would_take_again": 85.0,
-    "data_quality": 0.31
+    "data_quality": 0.51,
+    "descriptors": [
+      "data analysis",
+      "algorithm design",
+      "machine learning",
+      "statistical modeling",
+      "data visualization"
+    ],
+    "manually_reviewed": false
   },
   "DATA C100": {
     "units": 4,
@@ -86,7 +102,15 @@
     "instructors": [
       "Joseph Gonzalez"
     ],
-    "data_quality": 0.135
+    "data_quality": 0.335,
+    "descriptors": [
+      "data analysis",
+      "algorithm design",
+      "machine learning",
+      "statistical programming",
+      "data visualization"
+    ],
+    "manually_reviewed": false
   },
   "DATA C101": {
     "units": 4,
@@ -116,9 +140,9 @@
     "professor_rating": 3.8,
     "difficulty": 4.0,
     "topics": {
+      "python": 0.2,
       "statistics": 0.4,
-      "algorithm": 0.4,
-      "python": 0.2
+      "algorithm": 0.3
     },
     "instructors": [
       "Lisa Yan"
@@ -126,7 +150,15 @@
     "num_ratings": 20,
     "rmp_difficulty": 3.4,
     "would_take_again": 70.0,
-    "data_quality": 0.28
+    "data_quality": 0.48,
+    "descriptors": [
+      "data analysis",
+      "algorithm design",
+      "machine learning",
+      "statistical inference",
+      "data visualization"
+    ],
+    "manually_reviewed": false
   },
   "DATA C102": {
     "units": 4,
@@ -167,9 +199,9 @@
     "professor_rating": 3.4,
     "difficulty": 3.0,
     "topics": {
-      "statistics": 0.4,
+      "algorithm": 0.3,
       "math": 0.3,
-      "algorithm": 0.3
+      "statistics": 0.4
     },
     "instructors": [
       "Fernando Perez"
@@ -177,7 +209,13 @@
     "num_ratings": 8,
     "rmp_difficulty": 3.6,
     "would_take_again": 63.0,
-    "data_quality": 0.235
+    "data_quality": 0.375,
+    "descriptors": [
+      "data analysis",
+      "algorithm design",
+      "statistical inference"
+    ],
+    "manually_reviewed": false
   },
   "DATA C104": {
     "units": 4,
@@ -199,7 +237,15 @@
     "num_ratings": 11,
     "rmp_difficulty": 3.2,
     "would_take_again": 20.0,
-    "data_quality": 0.205
+    "data_quality": 0.405,
+    "descriptors": [
+      "data analysis",
+      "machine learning algorithms",
+      "statistical modeling",
+      "data visualization",
+      "computational methods"
+    ],
+    "manually_reviewed": false
   },
   "DATA 144": {
     "units": 3,
@@ -212,13 +258,21 @@
     "professor_rating": 1.7,
     "difficulty": 3.5,
     "topics": {
-      "statistics": 0.6,
-      "python": 0.4
+      "python": 0.6,
+      "statistics": 0.4
     },
     "instructors": [
       "TBA"
     ],
-    "data_quality": 0.135
+    "data_quality": 0.335,
+    "descriptors": [
+      "data analysis",
+      "machine learning algorithms",
+      "statistical modeling",
+      "data visualization",
+      "Python programming"
+    ],
+    "manually_reviewed": false
   },
   "DATA C140": {
     "units": 4,
@@ -259,9 +313,9 @@
     "professor_rating": 4.5,
     "difficulty": 3.0,
     "topics": {
-      "statistics": 0.5,
+      "algorithm": 0.1,
       "math": 0.4,
-      "algorithm": 0.1
+      "statistics": 0.5
     },
     "instructors": [
       "Ani Adhikari"
@@ -269,7 +323,15 @@
     "num_ratings": 147,
     "rmp_difficulty": 3.3,
     "would_take_again": 93.0,
-    "data_quality": 0.31
+    "data_quality": 0.51,
+    "descriptors": [
+      "data analysis",
+      "machine learning algorithms",
+      "statistical modeling",
+      "data visualization",
+      "computational methods"
+    ],
+    "manually_reviewed": false
   },
   "COMPSCI 61A": {
     "units": 4,
@@ -288,7 +350,9 @@
     "difficulty": 3.3,
     "topics": {
       "python": 0.6,
-      "algorithm": 0.4
+      "algorithm": 0.4,
+      "machine_learning": 0.05,
+      "statistics": 0.05
     },
     "instructors": [
       "John DeNero"
@@ -296,7 +360,13 @@
     "num_ratings": 282,
     "rmp_difficulty": 3.5,
     "would_take_again": 85.0,
-    "data_quality": 0.31
+    "data_quality": 0.495,
+    "descriptors": [
+      "algorithmic thinking",
+      "data analysis",
+      "computational problem solving"
+    ],
+    "manually_reviewed": false
   },
   "COMPSCI 61B": {
     "units": 4,
@@ -324,7 +394,15 @@
     "num_ratings": 92,
     "rmp_difficulty": 3.5,
     "would_take_again": 95.0,
-    "data_quality": 0.31
+    "data_quality": 0.51,
+    "descriptors": [
+      "algorithmic thinking",
+      "data analysis",
+      "computational problem solving",
+      "software development",
+      "machine learning"
+    ],
+    "manually_reviewed": false
   },
   "COMPSCI 61C": {
     "units": 4,
@@ -349,7 +427,9 @@
     "topics": {
       "engineering": 0.5,
       "algorithm": 0.3,
-      "physics": 0.2
+      "physics": 0.2,
+      "python": 0.1,
+      "statistics": 0.05
     },
     "instructors": [
       "Dan Garcia"
@@ -357,7 +437,13 @@
     "num_ratings": 196,
     "rmp_difficulty": 3.4,
     "would_take_again": 65.0,
-    "data_quality": 0.28
+    "data_quality": 0.465,
+    "descriptors": [
+      "algorithmic thinking",
+      "data analysis",
+      "computational problem solving"
+    ],
+    "manually_reviewed": false
   },
   "COMPSCI 70": {
     "units": 4,
@@ -398,7 +484,9 @@
     "difficulty": 4.3,
     "topics": {
       "algorithm": 0.8,
-      "engineering": 0.2
+      "engineering": 0.2,
+      "python": 0.1,
+      "statistics": 0.05
     },
     "instructors": [
       "Umesh Vazirani"
@@ -406,7 +494,13 @@
     "num_ratings": 15,
     "rmp_difficulty": 3.5,
     "would_take_again": 100.0,
-    "data_quality": 0.265
+    "data_quality": 0.45,
+    "descriptors": [
+      "algorithmic thinking",
+      "data structures and analysis",
+      "software engineering principles"
+    ],
+    "manually_reviewed": false
   },
   "ENGIN 7": {
     "units": 4,
@@ -433,7 +527,13 @@
     "num_ratings": 19,
     "rmp_difficulty": 3.2,
     "would_take_again": 100.0,
-    "data_quality": 0.265
+    "data_quality": 0.405,
+    "descriptors": [
+      "engineering applications",
+      "data analysis and visualization",
+      "machine learning techniques"
+    ],
+    "manually_reviewed": false
   },
   "MATH 51": {
     "units": 4,
@@ -455,7 +555,13 @@
     "num_ratings": 92,
     "rmp_difficulty": 3.6,
     "would_take_again": 24.0,
-    "data_quality": 0.25
+    "data_quality": 0.39,
+    "descriptors": [
+      "mathematical modeling",
+      "data analysis",
+      "problem solving"
+    ],
+    "manually_reviewed": false
   },
   "MATH 52": {
     "units": 4,
@@ -477,7 +583,15 @@
     "num_ratings": 416,
     "rmp_difficulty": 3.7,
     "would_take_again": 46.0,
-    "data_quality": 0.25
+    "data_quality": 0.45,
+    "descriptors": [
+      "mathematical modeling",
+      "computational methods",
+      "data analysis",
+      "problem solving",
+      "algorithm design"
+    ],
+    "manually_reviewed": false
   },
   "MATH 53": {
     "units": 4,
@@ -500,7 +614,15 @@
     "num_ratings": 233,
     "rmp_difficulty": 3.18,
     "would_take_again": 52.6,
-    "data_quality": 0.25
+    "data_quality": 0.45,
+    "descriptors": [
+      "mathematical modeling",
+      "computational problem solving",
+      "data analysis",
+      "algorithm design",
+      "machine learning"
+    ],
+    "manually_reviewed": false
   },
   "MATH 54": {
     "units": 4,
@@ -523,7 +645,13 @@
     "num_ratings": 345,
     "rmp_difficulty": 3.4,
     "would_take_again": 72.0,
-    "data_quality": 0.28
+    "data_quality": 0.42,
+    "descriptors": [
+      "mathematical modeling",
+      "algorithmic problem solving",
+      "data analysis and visualization"
+    ],
+    "manually_reviewed": false
   },
   "MATH 55": {
     "units": 4,
@@ -537,7 +665,8 @@
     "difficulty": 2.5,
     "topics": {
       "math": 0.7,
-      "algorithm": 0.3
+      "algorithm": 0.3,
+      "statistics": 0.05
     },
     "instructors": [
       "Mark Haiman"
@@ -545,7 +674,13 @@
     "num_ratings": 131,
     "rmp_difficulty": 2.5,
     "would_take_again": 84.0,
-    "data_quality": 0.31
+    "data_quality": 0.45,
+    "descriptors": [
+      "mathematical modeling",
+      "algorithmic thinking",
+      "data analysis"
+    ],
+    "manually_reviewed": false
   },
   "MATH 56": {
     "units": 4,
@@ -567,7 +702,14 @@
     "num_ratings": 350,
     "rmp_difficulty": 3.3,
     "would_take_again": 95.0,
-    "data_quality": 0.31
+    "data_quality": 0.45,
+    "descriptors": [
+      "algorithmic thinking",
+      "mathematical modeling",
+      "data analysis",
+      "computational problem solving"
+    ],
+    "manually_reviewed": false
   },
   "PHYSICS 7A": {
     "units": 4,
@@ -586,7 +728,9 @@
     "difficulty": 3.1,
     "topics": {
       "physics": 0.7,
-      "math": 0.3
+      "math": 0.3,
+      "algorithm": 0.05,
+      "machine_learning": 0.05
     },
     "instructors": [
       "Adrian Lee",
@@ -595,7 +739,13 @@
     "num_ratings": 87,
     "rmp_difficulty": 3.8,
     "would_take_again": 15.0,
-    "data_quality": 0.25
+    "data_quality": 0.435,
+    "descriptors": [
+      "physics concepts",
+      "mathematical modeling",
+      "scientific inquiry"
+    ],
+    "manually_reviewed": false
   },
   "PHYSICS 7B": {
     "units": 4,
@@ -626,7 +776,13 @@
     "num_ratings": 98,
     "rmp_difficulty": 3.74,
     "would_take_again": 75.7,
-    "data_quality": 0.28
+    "data_quality": 0.42,
+    "descriptors": [
+      "physics concepts",
+      "mathematical modeling",
+      "physical systems analysis"
+    ],
+    "manually_reviewed": false
   },
   "PHYSICS 8A": {
     "units": 4,
@@ -640,7 +796,9 @@
     "difficulty": 3.7,
     "topics": {
       "physics": 0.6,
-      "math": 0.4
+      "math": 0.4,
+      "algorithm": 0.05,
+      "data_structures": 0.05
     },
     "instructors": [
       "William Golightly",
@@ -649,7 +807,13 @@
     "num_ratings": 90,
     "rmp_difficulty": 3.1,
     "would_take_again": 52.0,
-    "data_quality": 0.25
+    "data_quality": 0.435,
+    "descriptors": [
+      "physics concepts",
+      "mathematical modeling",
+      "physical systems analysis"
+    ],
+    "manually_reviewed": false
   },
   "PHYSICS 8B": {
     "units": 4,
@@ -672,7 +836,13 @@
     "num_ratings": 80,
     "rmp_difficulty": 3.7,
     "would_take_again": 84.0,
-    "data_quality": 0.31
+    "data_quality": 0.45,
+    "descriptors": [
+      "physics problems",
+      "mathematical modeling",
+      "physical systems analysis"
+    ],
+    "manually_reviewed": false
   },
   "CHEM 1A & CHEM 1AL": {
     "units": 6,
@@ -691,7 +861,15 @@
     "instructors": [
       "TBA"
     ],
-    "data_quality": 0.135
+    "data_quality": 0.335,
+    "descriptors": [
+      "biochemistry techniques",
+      "chemical reactions and bonding",
+      "molecular structure and function",
+      "cellular processes and signaling",
+      "genomics and proteomics analysis"
+    ],
+    "manually_reviewed": false
   },
   "CHEM 3A & CHEM 3AL": {
     "units": 6,
@@ -713,7 +891,14 @@
     "num_ratings": 222,
     "rmp_difficulty": 3.3,
     "would_take_again": 82.0,
-    "data_quality": 0.31
+    "data_quality": 0.45,
+    "descriptors": [
+      "biochemistry techniques",
+      "lab protocols",
+      "chemical reactions",
+      "molecular biology methods"
+    ],
+    "manually_reviewed": false
   },
   "BIOLOGY 1A & BIOLOGY 1AL": {
     "units": 5,
@@ -742,7 +927,13 @@
     "num_ratings": 102,
     "rmp_difficulty": 1.46,
     "would_take_again": 38.0,
-    "data_quality": 0.25
+    "data_quality": 0.39,
+    "descriptors": [
+      "genetic analysis",
+      "lab techniques",
+      "biological principles"
+    ],
+    "manually_reviewed": false
   },
   "BIOLOGY 1B": {
     "units": 4,
@@ -755,8 +946,8 @@
     "professor_rating": 3.98,
     "difficulty": 2.7,
     "topics": {
-      "genetics": 0.5,
-      "biochemistry": 0.5
+      "biochemistry": 0.5,
+      "genetics": 0.5
     },
     "instructors": [
       "Benjamin Blackman",
@@ -769,7 +960,13 @@
     "num_ratings": 167,
     "rmp_difficulty": 2.95,
     "would_take_again": 71.3,
-    "data_quality": 0.28
+    "data_quality": 0.42,
+    "descriptors": [
+      "genomics analysis",
+      "bioinformatics tools",
+      "sequence alignment algorithms"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI C100A": {
     "units": 4,
@@ -783,12 +980,19 @@
     "difficulty": 3.5,
     "topics": {
       "biochemistry": 0.7,
-      "genetics": 0.3
+      "genetics": 0.3,
+      "statistics": 0.05
     },
     "instructors": [
       "David Drubin"
     ],
-    "data_quality": 0.135
+    "data_quality": 0.275,
+    "descriptors": [
+      "biochemistry techniques",
+      "genetic analysis methods",
+      "molecular biology skills"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 100B": {
     "units": 4,
@@ -806,8 +1010,8 @@
     "professor_rating": 4.1,
     "difficulty": 2.3,
     "topics": {
-      "biochemistry": 0.6,
-      "genetics": 0.4
+      "python": 0.6,
+      "statistics": 0.4
     },
     "instructors": [
       "Rebecca Heald"
@@ -815,7 +1019,15 @@
     "num_ratings": 5,
     "rmp_difficulty": 1.8,
     "would_take_again": 100.0,
-    "data_quality": 0.265
+    "data_quality": 0.465,
+    "descriptors": [
+      "biochemistry techniques",
+      "genetics analysis",
+      "molecular biology methods",
+      "cellular processes",
+      "biological systems"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 102": {
     "units": 4,
@@ -848,7 +1060,13 @@
     "num_ratings": 73,
     "rmp_difficulty": 2.55,
     "would_take_again": 38.6,
-    "data_quality": 0.25
+    "data_quality": 0.39,
+    "descriptors": [
+      "biochemical processes",
+      "genetic analysis",
+      "lab techniques"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 104": {
     "units": 4,
@@ -861,16 +1079,24 @@
     "professor_rating": 5.0,
     "difficulty": 2.8,
     "topics": {
-      "genetics": 0.6,
-      "bioinformatics": 0.2,
-      "statistics": 0.2
+      "python": 0.2,
+      "statistics": 0.4,
+      "bioinformatics": 0.3
     },
     "instructors": [
       "Nipam Patel"
     ],
     "num_ratings": 2,
     "would_take_again": 100.0,
-    "data_quality": 0.22
+    "data_quality": 0.42,
+    "descriptors": [
+      "bioinformatics algorithms",
+      "genomics analysis",
+      "sequence alignment techniques",
+      "computational biology methods",
+      "molecular cloning protocols"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI C112 & MCELLBI C112L": {
     "units": 7,
@@ -900,7 +1126,13 @@
     "num_ratings": 59,
     "rmp_difficulty": 0.17,
     "would_take_again": 26.9,
-    "data_quality": 0.25
+    "data_quality": 0.39,
+    "descriptors": [
+      "biochemistry techniques",
+      "genetics and genomics analysis",
+      "molecular biology methods"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 132": {
     "units": 4,
@@ -937,7 +1169,14 @@
     "num_ratings": 29,
     "rmp_difficulty": 2.87,
     "would_take_again": 74.1,
-    "data_quality": 0.28
+    "data_quality": 0.42,
+    "descriptors": [
+      "bioinformatics algorithms",
+      "molecular cloning techniques",
+      "sequence alignment methods",
+      "computational biology tools"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 110": {
     "units": 4,
@@ -963,7 +1202,13 @@
     "num_ratings": 7,
     "rmp_difficulty": 3.4,
     "would_take_again": 75.0,
-    "data_quality": 0.235
+    "data_quality": 0.375,
+    "descriptors": [
+      "biochemical processes",
+      "genetic analysis",
+      "statistical modeling"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 140 & MCELLBI 140L": {
     "units": 8,
@@ -993,7 +1238,15 @@
     "num_ratings": 25,
     "rmp_difficulty": 2.62,
     "would_take_again": 70.4,
-    "data_quality": 0.28
+    "data_quality": 0.48,
+    "descriptors": [
+      "biochemistry techniques",
+      "molecular biology methods",
+      "cellular processes analysis",
+      "genomics and proteomics tools",
+      "biological systems engineering"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 141": {
     "units": 4,
@@ -1032,7 +1285,15 @@
     "num_ratings": 12,
     "rmp_difficulty": 1.75,
     "would_take_again": 100.0,
-    "data_quality": 0.265
+    "data_quality": 0.465,
+    "descriptors": [
+      "genomics analysis",
+      "bioinformatics tools",
+      "sequence alignment algorithms",
+      "molecular cloning techniques",
+      "causal inference with observational data"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI C148": {
     "units": 4,
@@ -1061,7 +1322,13 @@
     "num_ratings": 17,
     "rmp_difficulty": 3.2,
     "would_take_again": 50.0,
-    "data_quality": 0.205
+    "data_quality": 0.345,
+    "descriptors": [
+      "bioinformatics algorithms",
+      "sequence analysis techniques",
+      "genomics and proteomics tools"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 149": {
     "units": 3,
@@ -1084,7 +1351,9 @@
     "difficulty": 3.8,
     "topics": {
       "lab": 0.6,
-      "biochemistry": 0.4
+      "biochemistry": 0.4,
+      "python": 0.1,
+      "statistics": 0.05
     },
     "instructors": [
       "Steven Brenner",
@@ -1094,7 +1363,15 @@
     "num_ratings": 5,
     "rmp_difficulty": 3.8,
     "would_take_again": 100.0,
-    "data_quality": 0.265
+    "data_quality": 0.51,
+    "descriptors": [
+      "biochemistry techniques",
+      "molecular biology methods",
+      "sequence alignment algorithms",
+      "protein structure prediction",
+      "genomics analysis"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 150 & MCELLBI 150L": {
     "units": 8,
@@ -1125,7 +1402,13 @@
     "num_ratings": 23,
     "rmp_difficulty": 0.57,
     "would_take_again": 66.3,
-    "data_quality": 0.28
+    "data_quality": 0.42,
+    "descriptors": [
+      "biochemistry techniques",
+      "molecular biology methods",
+      "cellular processes analysis"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 153": {
     "units": 4,
@@ -1148,9 +1431,9 @@
     "professor_rating": 3.13,
     "difficulty": 4.0,
     "topics": {
-      "bioinformatics": 0.6,
+      "python": 0.3,
       "statistics": 0.4,
-      "python": 0.3
+      "bioinformatics": 0.6
     },
     "instructors": [
       "Andrew Dillin",
@@ -1159,7 +1442,15 @@
     "num_ratings": 18,
     "rmp_difficulty": 3.38,
     "would_take_again": 70.7,
-    "data_quality": 0.235
+    "data_quality": 0.435,
+    "descriptors": [
+      "bioinformatics algorithms",
+      "sequence analysis techniques",
+      "computational biology methods",
+      "genomics data analysis",
+      "molecular cloning protocols"
+    ],
+    "manually_reviewed": false
   },
   "MCELLBI 153L": {
     "units": 4,
@@ -1178,7 +1469,9 @@
     "difficulty": 4.0,
     "topics": {
       "lab": 0.7,
-      "bioinformatics": 0.4
+      "bioinformatics": 0.4,
+      "algorithm": 0.2,
+      "data_structures": 0.1
     },
     "instructors": [
       "Jeffery Cox",
@@ -1187,7 +1480,13 @@
     "num_ratings": 17,
     "rmp_difficulty": 3.58,
     "would_take_again": 68.9,
-    "data_quality": 0.235
+    "data_quality": 0.42,
+    "descriptors": [
+      "bioinformatics algorithms",
+      "molecular biology techniques",
+      "computational biology methods"
+    ],
+    "manually_reviewed": false
   },
   "BIOENG C131": {
     "units": 4,
@@ -1209,14 +1508,20 @@
     "professor_rating": 1.9,
     "difficulty": 4.1,
     "topics": {
-      "engineering": 0.6,
-      "algorithm": 0.4,
+      "algorithm": 0.6,
+      "engineering": 0.5,
       "python": 0.3
     },
     "instructors": [
       "TBA"
     ],
-    "data_quality": 0.135
+    "data_quality": 0.275,
+    "descriptors": [
+      "bioengineering algorithms",
+      "biomedical engineering techniques",
+      "medical device development"
+    ],
+    "manually_reviewed": false
   },
   "BIOENG C142": {
     "units": 4,
@@ -1242,12 +1547,20 @@
     "topics": {
       "engineering": 0.6,
       "physics": 0.4,
-      "math": 0.3
+      "math": 0.3,
+      "algorithm": 0.1,
+      "data_structures": 0.05
     },
     "instructors": [
       "Teresa Head-Gordon"
     ],
-    "data_quality": 0.135
+    "data_quality": 0.32,
+    "descriptors": [
+      "bioengineering techniques",
+      "biomedical instrumentation",
+      "medical device development"
+    ],
+    "manually_reviewed": false
   },
   "BIOENG 145": {
     "units": 4,
@@ -1271,8 +1584,8 @@
     "difficulty": 3.1,
     "topics": {
       "algorithm": 0.5,
-      "bioinformatics": 0.4,
-      "python": 0.3
+      "bioinformatics": 0.3,
+      "python": 0.2
     },
     "instructors": [
       "Liana Lareau"
@@ -1280,7 +1593,15 @@
     "num_ratings": 20,
     "rmp_difficulty": 1.4,
     "would_take_again": 100.0,
-    "data_quality": 0.31
+    "data_quality": 0.51,
+    "descriptors": [
+      "bioinformatics algorithms",
+      "sequence alignment",
+      "computational biology",
+      "molecular cloning",
+      "genomics analysis"
+    ],
+    "manually_reviewed": false
   },
   "BIOENG C149": {
     "units": 4,
@@ -1314,9 +1635,9 @@
     "professor_rating": 5.0,
     "difficulty": 3.1,
     "topics": {
-      "engineering": 0.5,
       "algorithm": 0.4,
-      "statistics": 0.3
+      "statistics": 0.3,
+      "engineering": 0.5
     },
     "instructors": [
       "Liana Lareau"
@@ -1324,7 +1645,13 @@
     "num_ratings": 20,
     "rmp_difficulty": 1.4,
     "would_take_again": 100.0,
-    "data_quality": 0.31
+    "data_quality": 0.45,
+    "descriptors": [
+      "bioengineering algorithms",
+      "biostatistics workflows",
+      "molecular cloning techniques"
+    ],
+    "manually_reviewed": false
   },
   "BIOENG 103": {
     "units": 4,
@@ -1352,8 +1679,7 @@
     "difficulty": 3.7,
     "topics": {
       "physics": 0.5,
-      "engineering": 0.4,
-      "math": 0.3
+      "engineering": 0.4
     },
     "instructors": [
       "Derfogail Delcassian",
@@ -1362,7 +1688,15 @@
     "num_ratings": 4,
     "rmp_difficulty": 3.8,
     "would_take_again": 25.0,
-    "data_quality": 0.16
+    "data_quality": 0.36,
+    "descriptors": [
+      "bioengineering techniques",
+      "biomedical engineering applications",
+      "medical device design",
+      "biological systems analysis",
+      "mechanical and electrical engineering principles"
+    ],
+    "manually_reviewed": false
   },
   "STAT 20": {
     "units": 4,
@@ -1384,7 +1718,13 @@
     "num_ratings": 210,
     "rmp_difficulty": 3.9,
     "would_take_again": 30.0,
-    "data_quality": 0.25
+    "data_quality": 0.39,
+    "descriptors": [
+      "statistical inference",
+      "data analysis techniques",
+      "probability and statistics"
+    ],
+    "manually_reviewed": false
   },
   "STAT 133": {
     "units": 3,
@@ -1403,7 +1743,15 @@
     "instructors": [
       "Gaston Sanchez"
     ],
-    "data_quality": 0.135
+    "data_quality": 0.335,
+    "descriptors": [
+      "data analysis",
+      "statistical modeling",
+      "machine learning",
+      "data visualization",
+      "scientific computing"
+    ],
+    "manually_reviewed": false
   },
   "STAT 134": {
     "units": 4,
@@ -1416,9 +1764,9 @@
     "professor_rating": 2.3,
     "difficulty": 3.9,
     "topics": {
-      "statistics": 0.5,
+      "statistics": 0.7,
       "regression": 0.3,
-      "probability": 0.2
+      "probability": 0.05
     },
     "instructors": [
       "Shobhana Stoyanov"
@@ -1426,6 +1774,12 @@
     "num_ratings": 210,
     "rmp_difficulty": 3.9,
     "would_take_again": 30.0,
-    "data_quality": 0.25
+    "data_quality": 0.39,
+    "descriptors": [
+      "statistical inference",
+      "regression analysis",
+      "data modeling"
+    ],
+    "manually_reviewed": false
   }
 }

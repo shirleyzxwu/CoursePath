@@ -13,8 +13,7 @@ Updates courses.json in-place with:
 Existing hand-authored fields (prerequisites, topics, units) are never
 overwritten; external data only fills in or updates the signal fields.
 
-Usage:
-    python scripts/merge_sources.py [--rmp-only] [--sis-only]
+python scripts/merge_sources.py [--rmp-only] [--sis-only]
 """
 
 import json
@@ -29,11 +28,18 @@ SIS_PATH     = os.path.join(ROOT, "coursepath", "data", "sis_classes_raw.json")
 
 def merge_rmp(courses: dict, rmp_cache: dict) -> int:
     """
-    Update professor_rating and num_ratings from rmp_cache.
+    Update professor_rating, num_ratings, rmp_difficulty, and
+    would_take_again from rmp_cache.
 
-    For courses with multiple instructors, averages their RMP ratings
-    weighted by num_ratings (more-reviewed instructors count more).
+    For courses with multiple instructors, all numeric signals are
+    averaged weighted by num_ratings (more-reviewed instructors count more).
     Instructors not found in cache or with None rating are skipped.
+
+    Fields written to courses.json:
+      professor_rating   float   weighted avg RMP quality rating (1–5)
+      num_ratings        int     total review count across all instructors
+      rmp_difficulty     float   weighted avg RMP difficulty rating (1–5)
+      would_take_again   float   weighted avg % who would take again (0–100)
 
     Returns count of courses updated.
     """
@@ -43,7 +49,7 @@ def merge_rmp(courses: dict, rmp_cache: dict) -> int:
         if not instructors:
             continue
 
-        ratings, weights, difficulties = [], [], []
+        ratings, weights, difficulties, wta_vals = [], [], [], []
         for instructor in instructors:
             entry = rmp_cache.get(instructor)
             if not entry:
@@ -51,28 +57,32 @@ def merge_rmp(courses: dict, rmp_cache: dict) -> int:
             rating = entry.get("rating")
             n      = entry.get("num_ratings", 0)
             diff   = entry.get("difficulty")
+            wta    = entry.get("would_take_again")
             if rating is None:
                 continue
-            w = max(n, 1)   # weight by review count; floor at 1 to avoid zero-weight
+            w = max(n, 1)
             ratings.append(rating * w)
             weights.append(w)
             if diff is not None:
                 difficulties.append(diff * w)
+            if wta is not None:
+                wta_vals.append(wta * w)
 
         if not ratings:
             continue
 
         total_weight = sum(weights)
         avg_rating   = sum(ratings) / total_weight
-        total_n      = sum(w for w in weights)
+        total_n      = sum(weights)
 
-        # Only overwrite if have more data than before
         old_n = data.get("num_ratings", 0)
         if total_n >= old_n:
             courses[name]["professor_rating"] = round(avg_rating, 2)
             courses[name]["num_ratings"]      = int(total_n)
             if difficulties:
-                courses[name]["rmp_difficulty"] = round(sum(difficulties) / total_weight, 2)
+                courses[name]["rmp_difficulty"]   = round(sum(difficulties) / total_weight, 2)
+            if wta_vals:
+                courses[name]["would_take_again"] = round(sum(wta_vals) / total_weight, 1)
             updated += 1
 
     return updated
@@ -83,7 +93,7 @@ def merge_sis(courses: dict, sis_raw: dict) -> int:
     Update sis_verified and grade_dist from SIS raw data.
 
     SIS course IDs look like 'COMPSCI-061A'; courses.json keys look like
-    'COMPSCI 61A'.  Normalised both to uppercase, no leading zeros,
+    'COMPSCI 61A'.  Normalise both to uppercase, no leading zeros,
     space-separated for matching.
     """
     def normalise(s: str) -> str:

@@ -1,13 +1,10 @@
 """
 Semantic interest profile builder.
 
-Two responsibilities:
-
   1. build_index()
      Embeds every tag description and every course descriptor using
      sentence-transformers. Saves a local index to data/embeddings.npz
-     so subsequent runs are instant (no re-embedding needed unless
-     courses.json or tag_taxonomy.json change).
+     so no re-embedding needed unless courses.json or tag_taxonomy.json change.
 
   2. profile_from_text(user_input) -> dict[str, float]
      Given a free-text description of interests (e.g. "I want to do
@@ -18,8 +15,7 @@ Two responsibilities:
 Model choice: all-MiniLM-L6-v2
 
 Dependencies:
-  pip install sentence-transformers numpy          # default backend
-  pip install anthropic numpy                      # Anthropic backend
+  pip install sentence-transformers numpy
 
 Usage:
   python -m coursepath.embedder --build            # build / refresh index
@@ -42,7 +38,7 @@ ST_MODEL = "all-MiniLM-L6-v2"
 
 
 # ─────────────────────────────────────────────
-# Backend: sentence-transformers (default)
+# Backend: sentence-transformers
 # ─────────────────────────────────────────────
 
 def _st_embed(texts: list[str]) -> np.ndarray:
@@ -55,33 +51,7 @@ def _st_embed(texts: list[str]) -> np.ndarray:
     vecs = model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
     return np.array(vecs, dtype=np.float32)
 
-def _anthropic_embed(texts: list[str]) -> np.ndarray:
-    """
-    Embed using Anthropic's voyage-3-lite model via the anthropic client.
-    Requires ANTHROPIC_API_KEY in the environment.
-    """
-    import anthropic
-    client = anthropic.Anthropic()
-    # voyage-3-lite supports batches up to 128 inputs
-    all_vecs = []
-    batch_size = 64
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i : i + batch_size]
-        response = client.embeddings.create(
-            model="voyage-3-lite",
-            input=batch,
-        )
-        all_vecs.extend([e.embedding for e in response.data])
-    mat = np.array(all_vecs, dtype=np.float32)
-    # L2-normalise
-    norms = np.linalg.norm(mat, axis=1, keepdims=True)
-    norms = np.where(norms == 0, 1.0, norms)
-    return mat / norms
-
-
 def embed(texts: list[str]) -> np.ndarray:
-    if BACKEND == "anthropic":
-        return _anthropic_embed(texts)
     return _st_embed(texts)
 
 
@@ -161,7 +131,7 @@ def build_index(force: bool = False) -> None:
 
 
 # ─────────────────────────────────────────────
-# Load index (cached in module scope)
+# Load index & cache in module scope
 # ─────────────────────────────────────────────
 
 _INDEX_CACHE: dict | None = None
@@ -198,7 +168,7 @@ def profile_from_text(
     Convert free-text interest description into a {tag: weight} profile.
 
     Algorithm:
-      1. Embed user_input (1 API/model call).
+      1. Embed user_input (1 model call).
       2. Compute cosine similarity against every tag embedding.
       3. Keep the top_k_tags tags above min_similarity threshold.
       4. Normalise weights to [0, 1] by dividing by the max similarity.

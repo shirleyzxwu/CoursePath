@@ -62,86 +62,6 @@ const TERMS_SEQ = [
   ["Fall","Year 4"],["Spring","Year 4"],
 ];
 
-// ── Major / track data ───────────────────────────────────────────────────────
-const MAJOR_TRACKS = {
-  "CS B.A.":             { key:"CS_BA",   tracks:["default"] },
-  "EECS B.S.":           { key:"EECS_BS", tracks:["default"] },
-  "Data Science B.A.":   { key:"DATA_BA", tracks:["default",
-    "computational_molecular_genomic_biology","evolution_biodiversity",
-    "human_population_health","neurosciences","ecology_environment"] },
-  "Bioengineering B.S.": { key:"BIOE_BS", tracks:[
-    "bioinstrumentation","computational_biology",
-    "synthetic_systems_biology","cell_tissue_engineering"] },
-  "MCB B.A.":            { key:"MCB",     tracks:[
-    "BBS_track1","BBS_track2","CDP_track1","CDP_track2",
-    "GGED_track1","GGED_track2","IMM_track1","IMM_track2","IMM_track3",
-    "MTX_track1","MTX_track2"] },
-};
-
-// Major requirement buckets (this is a subset: courses in COURSES only)
-const MAJOR_REQS = {
-  CS_BA: {
-    "calc_1":["MATH 51"],"calc_2":["MATH 52"],
-    "linear_algebra":["MATH 54","MATH 56"],
-    "program_struct":["COMPSCI 61A"],"data_structures":["COMPSCI 61B"],
-    "machine_struct":["COMPSCI 61C"],"discrete_math":["COMPSCI 70"],
-    "cs_theory":["COMPSCI 170"],
-  },
-  EECS_BS: {
-    "calc_1":["MATH 51"],"calc_2":["MATH 52"],
-    "linear_algebra":["MATH 54","MATH 56"],
-    "physics_1":["PHYSICS 7A","PHYSICS 8A"],"physics_2":["PHYSICS 7B","PHYSICS 8B"],
-    "program_struct":["COMPSCI 61A"],"data_structures":["COMPSCI 61B"],
-    "machine_struct":["COMPSCI 61C"],"discrete_math":["COMPSCI 70"],
-    "cs_theory":["COMPSCI 170"],
-  },
-  DATA_BA: {
-    "foundations":["DATA C8","STAT 20"],
-    "calc_1":["MATH 51"],"calc_2":["MATH 52"],
-    "linear_algebra":["MATH 54","MATH 56"],
-    "program_struct":["COMPSCI 61A","DATA C88C"],
-    "data_structures":["COMPSCI 61B"],
-    "core":["DATA C100"],
-    "probability":["DATA C140","STAT 134"],
-    "CID":["DATA C101","DATA C102","COMPSCI 170","BIOENG 145","MCELLBI C148"],
-    "MLDM":["DATA C102"],
-    "HCE":["DATA C104"],
-  },
-  BIOE_BS: {
-    "calc_1":["MATH 51"],"calc_2":["MATH 52"],
-    "calc_3":["MATH 53"],"linear_alg":["MATH 54"],
-    "physics_1":["PHYSICS 7A"],"physics_2":["PHYSICS 7B"],
-    "chem_1":["CHEM 1A & CHEM 1AL"],"chem_2":["CHEM 3A & CHEM 3AL"],
-    "programming":["ENGIN 7","COMPSCI 61A"],
-    "bioe_fundamentals":["BIOENG C131","BIOENG C142","BIOENG C149","BIOENG 103"],
-    "bioe_lab":["MCELLBI 140 & MCELLBI 140L","MCELLBI 153L"],
-  },
-  MCB: {
-    "math":["MATH 51","MATH 52"],
-    "chem_1":["CHEM 1A & CHEM 1AL"],"chem_2":["CHEM 3A & CHEM 3AL"],
-    "bio_1":["BIOLOGY 1A & BIOLOGY 1AL"],"bio_2":["BIOLOGY 1B"],
-    "physics_1":["PHYSICS 8A","PHYSICS 7A"],"physics_2":["PHYSICS 8B","PHYSICS 7B"],
-    "mcb_core":["MCELLBI C100A","MCELLBI 100B","MCELLBI 102"],
-    "genetics":["MCELLBI 104","MCELLBI 110"],
-    "lab":["MCELLBI 140 & MCELLBI 140L","MCELLBI 149","MCELLBI 153L"],
-  },
-};
-
-function majorProgressBonus(courses, completedSoFar, majorKeys) {
-  if (!majorKeys.length) return 0;
-  let total = 0;
-  for (const mk of majorKeys) {
-    const reqs = MAJOR_REQS[mk] || {};
-    const buckets = Object.values(reqs);
-    if (!buckets.length) continue;
-    const allCourses = new Set([...completedSoFar, ...courses]);
-    const fulfilled = buckets.filter(opts => opts.some(c => allCourses.has(c))).length;
-    const before    = buckets.filter(opts => opts.some(c => completedSoFar.has(c))).length;
-    total += (fulfilled - before) / buckets.length;
-  }
-  return total / majorKeys.length;
-}
-
 // ── Prereq evaluator ─────────────────────────────────────────────────────────
 function prereqMet(req, taken) {
   if (!req) return true;
@@ -152,25 +72,18 @@ function prereqMet(req, taken) {
 }
 
 // ── Scoring ──────────────────────────────────────────────────────────────────
-function scoreSchedule(courses, profile, weights, completedSoFar = new Set(), majorKeys = []) {
+function scoreSchedule(courses, profile, weights) {
   const n = courses.length;
   if (!n) return 0;
-  let interest = 0, avgDiff = 0, avgProf = 0, avgWta = 0, wtaCount = 0;
+  let interest = 0, avgDiff = 0, avgProf = 0;
   for (const c of courses) {
     const cd = COURSES[c];
     for (const [t, w] of Object.entries(cd.topics)) interest += w * (profile[t] || 0);
-    avgDiff += (cd.rmp_difficulty != null ? cd.rmp_difficulty * 0.6 + cd.difficulty * 0.4 : cd.difficulty);
+    avgDiff += cd.difficulty;
     avgProf += cd.rating;
-    if (cd.would_take_again != null) { avgWta += cd.would_take_again / 100; wtaCount++; }
   }
   interest /= n; avgDiff /= n; avgProf /= n;
-  const wta = wtaCount ? avgWta / wtaCount : 0;
-  const mp  = majorProgressBonus(courses, completedSoFar, majorKeys);
-  return (weights.interest || 1.0) * interest
-       - (weights.difficulty || 0.5) * avgDiff
-       + (weights.professor || 0.3) * avgProf
-       + (weights.would_take_again || 0.2) * wta
-       + (weights.major_progress || 0.2) * mp;
+  return weights.interest * interest - weights.difficulty * avgDiff + weights.professor * avgProf;
 }
 
 // ── Combination generator (capped at k=5) ────────────────────────────────────
@@ -182,7 +95,7 @@ function* combos(arr, k) {
 }
 
 // ── Single-semester planner ──────────────────────────────────────────────────
-function bestSemester(completed, profile, term, weights, minU, maxU, majorKeys = [], topK = 5) {
+function bestSemester(completed, profile, term, weights, minU, maxU, topK = 5) {
   const avail = Object.keys(COURSES).filter(c =>
     !completed.has(c) &&
     prereqMet(COURSES[c].prereqs, completed) &&
@@ -193,7 +106,7 @@ function bestSemester(completed, profile, term, weights, minU, maxU, majorKeys =
     for (const combo of combos(avail, k)) {
       const units = combo.reduce((s, c) => s + COURSES[c].units, 0);
       if (units < minU || units > maxU) continue;
-      const sc = scoreSchedule(combo, profile, weights, completed, majorKeys);
+      const sc = scoreSchedule(combo, profile, weights);
       heap.push({ courses: combo, score: sc, units });
     }
   }
@@ -202,12 +115,12 @@ function bestSemester(completed, profile, term, weights, minU, maxU, majorKeys =
 }
 
 // ── Four-year beam search ────────────────────────────────────────────────────
-function planFourYears(profile, weights, minU, maxU, beamWidth = 3, initialCompleted = new Set(), majorKeys = [], numSems = 8) {
-  let beam = [{ completed: new Set([...initialCompleted]), semesters: [], score: 0 }];
-  for (const [term, year] of TERMS_SEQ.slice(0, numSems)) {
+function planFourYears(profile, weights, minU, maxU, beamWidth = 3) {
+  let beam = [{ completed: new Set(), semesters: [], score: 0 }];
+  for (const [term, year] of TERMS_SEQ) {
     const next = [];
     for (const state of beam) {
-      const options = bestSemester(state.completed, profile, term, weights, minU, maxU, majorKeys, 4);
+      const options = bestSemester(state.completed, profile, term, weights, minU, maxU, 4);
       if (!options.length) { next.push(state); continue; }
       for (const opt of options) {
         const newCompleted = new Set([...state.completed, ...opt.courses]);
@@ -340,59 +253,27 @@ function SliderRow({ label, value, min=0, max=1, step=0.05, onChange, color }) {
 export default function App() {
   const [tab, setTab]         = useState("Profile");
   const [profile, setProfile] = useState(() => Object.fromEntries(ALL_TOPICS.map(t => [t, 0.5])));
-  const [weights, setWeights] = useState({ interest:1.0, difficulty:0.5, professor:0.3, would_take_again:0.2, major_progress:0.2 });
+  const [weights, setWeights] = useState({ interest:1.0, difficulty:0.5, professor:0.3, would_take_again:0.2 });
   const [minU, setMinU]       = useState(12);
   const [maxU, setMaxU]       = useState(18);
   const [beamW, setBeamW]     = useState(3);
-  const [numSems, setNumSems] = useState(8);
   const [showQuality, setShowQuality] = useState(true);
-  const [completedInput, setCompletedInput] = useState("");
-  const [selectedMajors, setSelectedMajors] = useState([]);
-  const [selectedTracks, setSelectedTracks] = useState({});
   const [plan, setPlan]       = useState(null);
   const [activePlan, setActivePlan] = useState(0);
   const [activeSem, setActiveSem]   = useState(0);
 
-  const completedSet = useMemo(() => {
-    const names = completedInput.split(",").map(s => s.trim()).filter(s => s in COURSES);
-    return new Set(names);
-  }, [completedInput]);
-
-  const majorKeys = useMemo(() =>
-    selectedMajors.map(m => {
-      const info = MAJOR_TRACKS[m];
-      const track = selectedTracks[m] || "default";
-      return info?.key || info?.key;
-    }).filter(Boolean),
-  [selectedMajors, selectedTracks]);
-
   const generate = useCallback(() => {
-    const result = planFourYears(profile, weights, minU, maxU, beamW, completedSet, majorKeys, numSems);
+    const result = planFourYears(profile, weights, minU, maxU, beamW);
     setPlan(result);
     setActivePlan(0);
     setActiveSem(0);
     setTab("Plan");
-  }, [profile, weights, minU, maxU, beamW, completedSet, majorKeys]);
+  }, [profile, weights, minU, maxU, beamW]);
 
   const currentPlan  = plan?.[activePlan];
   const currentSem   = currentPlan?.semesters?.[activeSem];
   const totalCourses = currentPlan ? currentPlan.semesters.reduce((s,sem) => s + sem.courses.length, 0) : 0;
   const totalUnits   = currentPlan ? currentPlan.semesters.reduce((s,sem) => s + sem.units, 0) : 0;
-
-  const majorProgress = useMemo(() => {
-    if (!currentPlan || !majorKeys.length) return null;
-    const allCompleted = new Set([...completedSet, ...currentPlan.semesters.flatMap(s => s.courses)]);
-    let total = 0, count = 0;
-    for (const mk of majorKeys) {
-      const reqs = MAJOR_REQS[mk] || {};
-      const buckets = Object.values(reqs);
-      if (!buckets.length) continue;
-      const fulfilled = buckets.filter(opts => opts.some(c => allCompleted.has(c))).length;
-      total += fulfilled / buckets.length;
-      count++;
-    }
-    return count ? Math.round((total / count) * 100) : null;
-  }, [currentPlan, majorKeys, completedSet]);
 
   return (
     <div style={{ fontFamily:"var(--font-sans)", padding:"1.25rem 1rem", maxWidth:700 }}>
@@ -422,28 +303,6 @@ export default function App() {
             <SliderRow key={t} label={t} value={profile[t]} color={tc(t)}
               onChange={v => setProfile(p => ({ ...p, [t]: v }))} />
           ))}
-          <div style={{ marginTop:"1.5rem", paddingTop:"1rem", borderTop:"0.5px solid var(--color-border-tertiary)" }}>
-            <p style={{ fontSize:13, fontWeight:500, color:"var(--color-text-primary)", margin:"0 0 4px" }}>
-              Courses already completed
-            </p>
-            <p style={{ fontSize:12, color:"var(--color-text-secondary)", margin:"0 0 6px" }}>
-              Comma-separated — these will be excluded from recommendations
-            </p>
-            <input
-              value={completedInput}
-              onChange={e => setCompletedInput(e.target.value)}
-              placeholder="e.g. DATA C8, MATH 51, COMPSCI 61A"
-              style={{ width:"100%", padding:"8px 10px", borderRadius:"var(--border-radius-md)",
-                border:"0.5px solid var(--color-border-secondary)",
-                background:"var(--color-background-secondary)",
-                color:"var(--color-text-primary)", fontSize:13, boxSizing:"border-box" }}
-            />
-            {completedSet.size > 0 && (
-              <p style={{ fontSize:12, color:"var(--color-text-secondary)", margin:"6px 0 0" }}>
-                ✓ {completedSet.size} recognised: {[...completedSet].join(", ")}
-              </p>
-            )}
-          </div>
           <button onClick={() => setTab("Weights")} style={{
             marginTop:"1rem", padding:"7px 18px", fontSize:13,
             background:"var(--color-background-secondary)",
@@ -494,29 +353,12 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:"1.25rem" }}>
-            <div>
-              <p style={{ fontSize:13, color:"var(--color-text-secondary)", margin:"0 0 4px" }}>
-                Beam width — plan variants ({beamW})
-              </p>
-              <input type="range" min={1} max={5} step={1} value={beamW}
-                onChange={e => setBeamW(+e.target.value)} style={{ width:"100%" }} />
-            </div>
-            <div>
-              <p style={{ fontSize:13, color:"var(--color-text-secondary)", margin:"0 0 4px" }}>
-                Semesters to plan
-              </p>
-              <select value={numSems} onChange={e => setNumSems(+e.target.value)}
-                style={{ width:"100%", padding:"6px 8px", borderRadius:"var(--border-radius-md)",
-                  border:"0.5px solid var(--color-border-secondary)",
-                  background:"var(--color-background-secondary)",
-                  color:"var(--color-text-primary)", fontSize:13 }}>
-                <option value={2}>2 semesters — 1 year</option>
-                <option value={4}>4 semesters — 2 years</option>
-                <option value={6}>6 semesters — 3 years</option>
-                <option value={8}>8 semesters — 4 years</option>
-              </select>
-            </div>
+          <div style={{ marginBottom:"1.25rem" }}>
+            <p style={{ fontSize:13, color:"var(--color-text-secondary)", margin:"0 0 4px" }}>
+              Beam width — how many plan variants to generate ({beamW})
+            </p>
+            <input type="range" min={1} max={5} step={1} value={beamW}
+              onChange={e => setBeamW(+e.target.value)} style={{ width:"100%" }} />
           </div>
 
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:"1.25rem" }}>
@@ -525,52 +367,6 @@ export default function App() {
             <label htmlFor="dq" style={{ fontSize:13, color:"var(--color-text-secondary)", cursor:"pointer" }}>
               Show data quality indicators on courses
             </label>
-          </div>
-
-          <div style={{ marginBottom:"1.25rem", paddingTop:"0.75rem", borderTop:"0.5px solid var(--color-border-tertiary)" }}>
-            <p style={{ fontSize:13, fontWeight:500, color:"var(--color-text-primary)", margin:"0 0 4px" }}>
-              Major(s)
-            </p>
-            <p style={{ fontSize:12, color:"var(--color-text-secondary)", margin:"0 0 8px" }}>
-              Select one or more to boost courses that satisfy your requirements
-            </p>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:"0.75rem" }}>
-              {Object.keys(MAJOR_TRACKS).map(m => {
-                const active = selectedMajors.includes(m);
-                return (
-                  <button key={m} onClick={() =>
-                    setSelectedMajors(prev =>
-                      prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]
-                    )
-                  } style={{
-                    fontSize:12, padding:"4px 12px",
-                    borderRadius:"var(--border-radius-md)",
-                    border: active ? "1px solid var(--color-text-primary)" : "0.5px solid var(--color-border-tertiary)",
-                    background: active ? "var(--color-background-secondary)" : "transparent",
-                    color:"var(--color-text-primary)", cursor:"pointer", fontWeight: active ? 500 : 400,
-                  }}>{m}</button>
-                );
-              })}
-            </div>
-            {selectedMajors.map(m => {
-              const tracks = MAJOR_TRACKS[m]?.tracks || [];
-              if (tracks.length <= 1) return null;
-              return (
-                <div key={m} style={{ marginBottom:8 }}>
-                  <p style={{ fontSize:12, color:"var(--color-text-secondary)", margin:"0 0 4px" }}>{m} track:</p>
-                  <select
-                    value={selectedTracks[m] || tracks[0]}
-                    onChange={e => setSelectedTracks(prev => ({ ...prev, [m]: e.target.value }))}
-                    style={{ fontSize:12, padding:"4px 8px", borderRadius:"var(--border-radius-md)",
-                      border:"0.5px solid var(--color-border-secondary)",
-                      background:"var(--color-background-secondary)",
-                      color:"var(--color-text-primary)", width:"100%" }}
-                  >
-                    {tracks.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-              );
-            })}
           </div>
 
           <button onClick={generate} style={{
@@ -612,11 +408,10 @@ export default function App() {
           )}
 
           {/* Stats */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:"1.25rem" }}>
-            <Stat label="Score" value={currentPlan.score.toFixed(2)} />
-            <Stat label="Courses" value={totalCourses} />
-            <Stat label="Units" value={totalUnits} />
-            <Stat label="Major req." value={majorProgress !== null ? `${majorProgress}%` : "—"} />
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:"1.25rem" }}>
+            <Stat label="Cumulative score" value={currentPlan.score.toFixed(2)} />
+            <Stat label="Courses planned" value={totalCourses} />
+            <Stat label="Total units" value={totalUnits} />
           </div>
 
           {/* Semester grid */}

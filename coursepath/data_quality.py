@@ -2,7 +2,7 @@
 Per-course data quality (confidence) scoring.
 
 Each course in courses.json may have some signals fully populated,
-partially populated, or absent.  This module computes a data_quality
+partially populated, or absent. This module computes a data_quality
 score in [0, 1] for every course and optionally embeds it directly
 into the course records.
 
@@ -17,17 +17,14 @@ The score is a weighted average of signal presence:
   grade_distribution    0.10     "grade_dist" key present with >= 3 entries
   sis_verified          0.10     "sis_verified" == True (set by fetcher.py)
 
-Weights are exposed as SIGNAL_WEIGHTS so can be tuned without
+Weights are exposed as SIGNAL_WEIGHTS so users can tune them without
 touching the logic.
 
-Usage:
-  from coursepath.data_quality import score_course, annotate_all
-
   # Score a single course record (dict)
-  q = score_course(course_data)            # float in [0.0, 1.0]
+  q = score_course(course_data)         
 
   # Write data_quality into every course in courses.json
-  annotate_all()                           # modifies courses.json in-place
+  annotate_all()
 """
 
 import json
@@ -42,12 +39,13 @@ COURSES_PATH = os.path.join(DATA_DIR, "courses.json")
 # ─────────────────────────────────────────────
 
 SIGNAL_WEIGHTS: dict[str, float] = {
-    "manually_reviewed": 0.30,
+    "manually_reviewed": 0.25,
     "descriptors":       0.20,
     "extended_topics":   0.15,
     "professor_rating":  0.15,
+    "would_take_again":  0.10,
     "grade_distribution":0.10,
-    "sis_verified":      0.10,
+    "sis_verified":      0.05,
 }
 
 assert abs(sum(SIGNAL_WEIGHTS.values()) - 1.0) < 1e-9, \
@@ -56,7 +54,7 @@ assert abs(sum(SIGNAL_WEIGHTS.values()) - 1.0) < 1e-9, \
 
 # ─────────────────────────────────────────────
 # Per-signal presence check
-# Returns float in [0, 1] per signal
+# Returns float in [0, 1] per signal (partial credit possible)
 # ─────────────────────────────────────────────
 
 def _signal_manually_reviewed(data: dict) -> float:
@@ -86,7 +84,7 @@ def _signal_professor_rating(data: dict) -> float:
     if n >= 20:  return 1.0
     if n >= 5:   return 0.7
     if n >= 1:   return 0.4
-    # Rating exists but num_ratings not recorded
+    # Rating exists but num_ratings not recorded: give partial credit
     return 0.5
 
 
@@ -102,6 +100,22 @@ def _signal_sis_verified(data: dict) -> float:
     return 1.0 if data.get("sis_verified") is True else 0.0
 
 
+def _signal_would_take_again(data: dict) -> float:
+    """
+    Presence of a would_take_again percentage (0–100).
+    Partial credit tiers based on value:
+      >= 80%: excellent engagement signal  → 1.0
+      >= 60%: good                         → 0.7
+      any value present                    → 0.4
+      absent                               → 0.0
+    """
+    wta = data.get("would_take_again")
+    if wta is None:  return 0.0
+    if wta >= 80:    return 1.0
+    if wta >= 60:    return 0.7
+    return 0.4
+
+
 # ─────────────────────────────────────────────
 # Map signal names to presence functions
 # Add new signals here without touching score_course()
@@ -112,6 +126,7 @@ _SIGNAL_FNS: dict[str, Any] = {
     "descriptors":        _signal_descriptors,
     "extended_topics":    _signal_extended_topics,
     "professor_rating":   _signal_professor_rating,
+    "would_take_again":   _signal_would_take_again,
     "grade_distribution": _signal_grade_distribution,
     "sis_verified":       _signal_sis_verified,
 }

@@ -1,8 +1,7 @@
 """
 Tests for coursepath/data_quality.py
 
-Run with:
-    pytest tests/test_data_quality.py -v
+Run with: pytest tests/test_data_quality.py -v
 """
 
 import pytest
@@ -12,6 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from coursepath.data_quality import (
+    _signal_would_take_again,
     SIGNAL_WEIGHTS,
     score_course,
     breakdown,
@@ -62,6 +62,8 @@ def full_course():
         "professor_rating": 4.8,
         "num_ratings": 25,
         "difficulty": 3.0,
+        "would_take_again": 92.0,
+        "rmp_difficulty": 2.9,
         "topics": {"python": 0.4, "statistics": 0.3, "algorithm": 0.2, "data_analysis": 0.1},
         "descriptors": [
             "data wrangling in Python",
@@ -138,7 +140,7 @@ class TestSignalProfessorRating:
     def test_missing_rating(self):
         assert _signal_professor_rating({}) == 0.0
     def test_rating_no_num_ratings(self):
-        # Rating exists but num_ratings absent gives partial credit
+        # Rating exists but num_ratings absent would give partial credit
         assert _signal_professor_rating({"professor_rating": 4.0}) == 0.5
     def test_one_rating(self):
         assert _signal_professor_rating({"professor_rating": 4.0, "num_ratings": 1}) == 0.4
@@ -171,6 +173,23 @@ class TestSignalSisVerified:
         assert _signal_sis_verified({"sis_verified": False}) == 0.0
     def test_missing(self):
         assert _signal_sis_verified({}) == 0.0
+
+
+class TestSignalWouldTakeAgain:
+    def test_missing(self):
+        assert _signal_would_take_again({}) == 0.0
+    def test_none(self):
+        assert _signal_would_take_again({"would_take_again": None}) == 0.0
+    def test_below_60(self):
+        assert _signal_would_take_again({"would_take_again": 45.0}) == 0.4
+    def test_between_60_and_80(self):
+        assert _signal_would_take_again({"would_take_again": 72.0}) == 0.7
+    def test_above_80(self):
+        assert _signal_would_take_again({"would_take_again": 92.0}) == 1.0
+    def test_exactly_80(self):
+        assert _signal_would_take_again({"would_take_again": 80.0}) == 1.0
+    def test_exactly_60(self):
+        assert _signal_would_take_again({"would_take_again": 60.0}) == 0.7
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -208,8 +227,7 @@ class TestScoreCourse:
         with_review["manually_reviewed"] = True
         with_ = score_course(with_review)
         delta = with_ - without
-        # manually_reviewed weight is 0.30, the largest single signal
-        assert abs(delta - 0.30) < 1e-9
+        assert abs(delta - 0.25) < 1e-9
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -286,7 +304,6 @@ class TestPlanQualitySummary:
         assert abs(result["mean"] - round(expected_mean, 4)) < 1e-4
 
     def test_low_confidence_flagged(self, mock_courses):
-        # COURSE A is minimal quality (<0.30)
         result = plan_quality_summary(["COURSE A", "COURSE B"], mock_courses)
         assert "COURSE A" in result["low_confidence"]
         assert "COURSE B" not in result["low_confidence"]
@@ -296,7 +313,6 @@ class TestPlanQualitySummary:
         assert result["label"] == quality_label(result["mean"])
 
     def test_falls_back_to_scoring_if_no_data_quality_field(self, minimal_course):
-        # course without pre-computed data_quality would compute immediately
         courses = {"COURSE X": minimal_course}  # no "data_quality" key
         result = plan_quality_summary(["COURSE X"], courses)
         assert 0.0 <= result["mean"] <= 1.0

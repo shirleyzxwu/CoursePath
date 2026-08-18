@@ -7,7 +7,7 @@ dependencies:
   - pip
   - numpy
   - pip:
-      - anthropic
+      - requests
       - sentence-transformers
-      - RateMyProfessorAPI
-      - torch               # required by sentence-transformers (CPU-only fine)
+      - playwright
+      - torch               # required by sentence-transformers

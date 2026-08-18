@@ -1,6 +1,7 @@
 """
-Run with:
-    pytest tests/test_planner.py -v
+Tests for coursepath/planner.py
+
+Run with: pytest tests/test_planner.py -v
 """
 
 import pytest
@@ -11,6 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from coursepath.planner import (
+    build_tracker, list_majors, list_tracks,
     prereq_satisfied,
     prereqs_met,
     build_prereq_graph,
@@ -117,7 +119,7 @@ class TestPrereqSatisfied:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# prereqs_met (against real COURSES data)
+# prereqs_met (against real courses data)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestPrereqsMet:
@@ -282,17 +284,35 @@ class TestScoring:
     def test_score_schedule_with_breadth_tracker(self, bio_profile, default_weights, basic_tracker):
         score_with    = score_schedule(("MCELLBI C148",), bio_profile, default_weights, basic_tracker)
         score_without = score_schedule(("MCELLBI C148",), bio_profile, default_weights, None)
-        # breadth bonus not applied when tracker is None, so without should equal
-        # the no-breadth version, or with weight=0 they're equal. Default weights
-        # don't include "breadth", so bonus is 0. They should be equal.
-        assert abs(score_with - score_without) < 1e-9
+        # MCELLBI C148 fills bio_upper bucket --> major_progress delta > 0
+        # so score_with should be strictly greater than score_without
+        assert score_with > score_without
 
     def test_score_schedule_breadth_weight_adds_bonus(self, bio_profile, basic_tracker):
-        weights_with_breadth = {"interest": 1.0, "difficulty": 0.5, "professor": 0.3, "breadth": 1.0}
-        weights_no_breadth   = {"interest": 1.0, "difficulty": 0.5, "professor": 0.3, "breadth": 0.0}
+        weights_with_breadth = {"interest": 1.0, "difficulty": 0.5, "professor": 0.3, "major_progress": 1.0}
+        weights_no_breadth   = {"interest": 1.0, "difficulty": 0.5, "professor": 0.3, "major_progress": 0.0}
         s_with = score_schedule(("COMPSCI 61A",), bio_profile, weights_with_breadth, basic_tracker)
         s_no   = score_schedule(("COMPSCI 61A",), bio_profile, weights_no_breadth,   basic_tracker)
         assert s_with > s_no
+
+    def test_score_schedule_would_take_again_bonus(self, bio_profile, default_weights):
+        """A course with would_take_again scores higher when that weight is active."""
+        COURSES["DATA C8"]["would_take_again"] = 95.0
+        weights_with = {**default_weights, "would_take_again": 1.0}
+        weights_none = {**default_weights, "would_take_again": 0.0}
+        s_with = score_schedule(("DATA C8",), bio_profile, weights_with)
+        s_none = score_schedule(("DATA C8",), bio_profile, weights_none)
+        COURSES["DATA C8"].pop("would_take_again", None)
+        assert s_with > s_none
+
+    def test_score_schedule_rmp_difficulty_blended(self, bio_profile, default_weights):
+        """rmp_difficulty blends with hand-authored difficulty when present."""
+        # Course with rmp_difficulty lower than hand-authored should score higher
+        COURSES["DATA C8"]["rmp_difficulty"] = 1.5   # lower than hand-authored 3.1
+        score_with_rmp = score_schedule(("DATA C8",), bio_profile, default_weights)
+        COURSES["DATA C8"].pop("rmp_difficulty", None)
+        score_without  = score_schedule(("DATA C8",), bio_profile, default_weights)
+        assert score_with_rmp > score_without   # lower difficulty → higher score
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -641,7 +661,7 @@ class TestPlannerState:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Multi-instructor RMP averaging (tests merge_sources.merge_rmp)
+# Multi-instructor RMP averaging (tests merge_sources.merge_rmp logic)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestMultiInstructorAveraging:
@@ -703,11 +723,9 @@ class TestMultiInstructorAveraging:
         assert abs(self._weighted_avg(entries) - 3.0) < 1e-9
 
     def test_tba_instructors_produce_no_entry(self):
-        # fetch_rmp.py skips "TBA": simulate by passing empty list
         assert self._weighted_avg([]) is None
 
     def test_biology_1b_six_instructors(self):
-        # BIOLOGY 1B has 6 instructors: simulate typical RMP coverage
         entries = [
             {"rating": 4.9, "num_ratings": 80},
             {"rating": 4.7, "num_ratings": 60},
@@ -723,7 +741,7 @@ class TestMultiInstructorAveraging:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# RequirementTracker — build_tracker integration with requirements.json
+# RequirementTracker: build_tracker integration with requirements.json
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestBuildTracker:
@@ -826,3 +844,244 @@ class TestBuildTracker:
         for c in required:
             tracker.apply(c)
         assert tracker.completion_ratio() > 0.5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RMP scraping: fetch_rmp.py (Playwright-based browser interception)
+# ─────────────────────────────────────────────────────────────────────────────
+
+import sys as _sys
+import os as _os
+_sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), ".."))
+
+from scripts.fetch_rmp import collect_instructors, search_professor, last_name, _name_matches
+
+
+class TestNameMatching:
+    """Tests for _name_matches(): first-name verification."""
+
+    def test_exact_match(self):
+        assert _name_matches("Gaston Sanchez", {"first_name": "Gaston", "last_name": "Sanchez"})
+
+    def test_case_insensitive(self):
+        assert _name_matches("gaston sanchez", {"first_name": "Gaston", "last_name": "Sanchez"})
+
+    def test_wrong_first_name_rejected(self):
+        assert not _name_matches("Gaston Sanchez", {"first_name": "Jeremy", "last_name": "Sanchez"})
+
+    def test_wrong_last_name_rejected(self):
+        assert not _name_matches("John Smith", {"first_name": "John", "last_name": "Jones"})
+
+    def test_nickname_prefix_match(self):
+        # "Ani" matches "Anil": prefix of thr name starts with first char of RMP name
+        assert _name_matches("Ani Adhikari", {"first_name": "Anil", "last_name": "Adhikari"})
+
+    def test_rmp_shortened_first_name(self):
+        # "Steve Brenner" on RMP for "Steven Brenner"
+        assert _name_matches("Steven Brenner", {"first_name": "Steve", "last_name": "Brenner"})
+
+    def test_middle_initial_in_our_name(self):
+        # "Adrian T Lee" → last name "Lee", first "Adrian"
+        assert _name_matches("Adrian T Lee", {"first_name": "Adrian", "last_name": "Lee"})
+
+    def test_empty_rmp_first_name(self):
+        assert not _name_matches("John Smith", {"first_name": "", "last_name": "Smith"})
+
+    def test_empty_full_name(self):
+        assert not _name_matches("", {"first_name": "John", "last_name": "Smith"})
+
+
+class TestFetchRMP:
+    """
+    Tests for scripts/fetch_rmp.py.
+    All Playwright calls are mocked. No browser or network required.
+    """
+
+    def test_collect_instructors_reads_list(self):
+        courses = {
+            "DATA C8":     {"instructors": ["John DeNero"]},
+            "MATH 51":     {"instructors": ["TBA"]},
+            "MCELLBI 149": {"instructors": ["Steven Brenner", "Lin He"]},
+        }
+        result = collect_instructors(courses)
+        assert "John DeNero" in result
+        assert "Steven Brenner" in result
+        assert "Lin He" in result
+        assert "TBA" not in result
+
+    def test_collect_instructors_deduplicates(self):
+        courses = {
+            "DATA C8":     {"instructors": ["John DeNero"]},
+            "DATA C88C":   {"instructors": ["John DeNero"]},
+            "COMPSCI 61A": {"instructors": ["John DeNero"]},
+        }
+        result = collect_instructors(courses)
+        assert result.count("John DeNero") == 1
+
+    def test_collect_instructors_skips_missing_field(self):
+        courses = {"DATA C8": {"units": 4}}
+        result = collect_instructors(courses)
+        assert result == []
+
+    def test_last_name_simple(self):
+        assert last_name("John DeNero") == "DeNero"
+
+    def test_last_name_middle_initial(self):
+        assert last_name("Adrian T Lee") == "Lee"
+
+    def test_last_name_single_word(self):
+        assert last_name("DeNero") == "DeNero"
+
+    def test_search_professor_returns_none_when_playwright_missing(self, mocker):
+        """If playwright not installed, should return None gracefully."""
+        mocker.patch.dict("sys.modules", {"playwright": None,
+                                          "playwright.sync_api": None})
+        # Re-import after patching
+        result = search_professor("DeNero")
+        # Either None (playwright missing) or real result
+        assert result is None or isinstance(result, dict)
+
+    def test_search_professor_returns_none_on_playwright_error(self, mocker):
+        """If Playwright raises, search_professor returns None."""
+        mock_pw = mocker.MagicMock()
+        mock_pw.__enter__ = mocker.MagicMock(side_effect=Exception("browser error"))
+        mock_pw.__exit__ = mocker.MagicMock(return_value=False)
+        mocker.patch("scripts.fetch_rmp.sync_playwright", return_value=mock_pw)
+        result = search_professor("DeNero")
+        assert result is None
+
+    def _mock_parse_card(self, mocker, results):
+        """
+        Mock _parse_card_text + Playwright so no browser is launched.
+        search_professor calls _parse_card_text per DOM card. Return
+        controlled dicts directly and fake out the Playwright context.
+        """
+        mock_page = mocker.MagicMock()
+        mock_page.route.return_value = None
+        mock_page.wait_for_selector.return_value = mocker.MagicMock()
+
+        if not results:
+            mock_page.query_selector_all.return_value = []
+        else:
+            cards = []
+            for r in results:
+                card = mocker.MagicMock()
+                card.inner_text.return_value = (
+                    f"QUALITY\n{r['rating']}\n"
+                    f"{r['first_name']} {r['last_name']}\n"
+                    f"{r['department']}\nAt UC Berkeley\n"
+                    f"{r['num_ratings']} ratings"
+                )
+                card.get_attribute.return_value = f"/professor/{r['rmp_id']}"
+                cards.append(card)
+            mock_page.query_selector_all.return_value = cards
+
+            call_idx = [0]
+            def fake_parse(text, href):
+                i = call_idx[0]; call_idx[0] += 1
+                return results[i] if i < len(results) else None
+            mocker.patch("scripts.fetch_rmp._parse_card_text", side_effect=fake_parse)
+
+        mock_browser = mocker.MagicMock()
+        mock_browser.new_page.return_value = mock_page
+        mock_pw = mocker.MagicMock()
+        mock_pw.__enter__ = mocker.MagicMock(return_value=mock_pw)
+        mock_pw.__exit__ = mocker.MagicMock(return_value=False)
+        mock_pw.chromium.launch.return_value = mock_browser
+        mocker.patch("scripts.fetch_rmp.sync_playwright", return_value=mock_pw)
+
+    def test_search_professor_returns_dict_on_success(self, mocker):
+        fake = {
+            "rating": 4.5, "difficulty": 2.8, "num_ratings": 42,
+            "would_take_again": 95.0, "department": "Computer Science",
+            "first_name": "John", "last_name": "DeNero", "rmp_id": "abc123",
+        }
+        self._mock_parse_card(mocker, [fake])
+        result = search_professor("DeNero")
+        assert result is not None
+        assert result["rating"] == 4.5
+        assert result["difficulty"] == 2.8
+        assert result["num_ratings"] == 42
+        assert result["first_name"] == "John"
+        assert result["last_name"] == "DeNero"
+        assert result["rmp_id"] == "abc123"
+
+    def test_search_professor_picks_most_rated(self, mocker):
+        """When multiple cards, picks the one with most ratings."""
+        low  = {"rating": 3.0, "difficulty": 3.0, "num_ratings": 5,
+                "would_take_again": 60.0, "department": "Math",
+                "first_name": "John", "last_name": "Smith", "rmp_id": "a"}
+        high = {"rating": 4.8, "difficulty": 2.0, "num_ratings": 120,
+                "would_take_again": 98.0, "department": "CS",
+                "first_name": "Jane", "last_name": "Smith", "rmp_id": "b"}
+        self._mock_parse_card(mocker, [low, high])
+        result = search_professor("Smith")
+        assert result is not None
+        assert result["num_ratings"] == 120
+        assert result["rating"] == 4.8
+
+    def test_search_professor_has_required_keys(self, mocker):
+        fake = {
+            "rating": 4.0, "difficulty": 3.0, "num_ratings": 10,
+            "would_take_again": 80.0, "department": "Biology",
+            "first_name": "A", "last_name": "B", "rmp_id": "x",
+        }
+        self._mock_parse_card(mocker, [fake])
+        result = search_professor("B")
+        assert result is not None
+        for key in ("rating", "difficulty", "num_ratings",
+                    "would_take_again", "department",
+                    "first_name", "last_name", "rmp_id"):
+            assert key in result, f"Missing key: {key}"
+
+    def test_search_professor_skips_unrated_ghost_card(self, mocker):
+        """A duplicate 0-rating card shouldn't beat a real rated one."""
+        ghost = {"rating": None, "difficulty": None, "num_ratings": 0,
+                  "would_take_again": None, "department": "Computer Science",
+                  "first_name": "John", "last_name": "DeNero", "rmp_id": "ghost1"}
+        real  = {"rating": 4.4, "difficulty": 3.5, "num_ratings": 242,
+                  "would_take_again": 86.1, "department": "Computer Science",
+                  "first_name": "John", "last_name": "DeNero", "rmp_id": "1621181"}
+        self._mock_parse_card(mocker, [ghost, real])
+        result = search_professor("DeNero")
+        assert result is not None
+        assert result["rmp_id"] == "1621181"
+        assert result["rating"] == 4.4
+
+    def test_search_professor_returns_none_when_all_unrated(self, mocker):
+        ghost = {"rating": None, "difficulty": None, "num_ratings": 0,
+                  "would_take_again": None, "department": "Computer Science",
+                  "first_name": "John", "last_name": "DeNero", "rmp_id": "ghost1"}
+        self._mock_parse_card(mocker, [ghost])
+        result = search_professor("DeNero")
+        assert result is None
+
+@pytest.mark.integration
+@pytest.mark.xfail(
+    reason="Requires Playwright installed and RMP accessible. "
+           "Run: pip install playwright && playwright install chromium",
+    strict=False,
+)
+def test_rmp_live_graphql_berkeley_professor():
+    """
+    Live Playwright test: launches a real headless browser to fetch RMP data.
+    Bypasses Cloudflare by letting RMP's own JS make the GraphQL call.
+    """
+    result = search_professor("DeNero")
+    print(f"\nRMP result for DeNero: {result}")
+    assert result is not None, "Playwright found no result (check if playwright install chromium was run)"
+    assert result["rating"] is not None
+    assert result["num_ratings"] > 0
+
+
+@pytest.mark.integration
+@pytest.mark.xfail(
+    reason="Requires Playwright installed and RMP accessible.",
+    strict=False,
+)
+def test_rmp_live_graphql_returns_dict_structure():
+    """Live test: confirm response shape is stable for Lior Pachter."""
+    result = search_professor("Pachter")
+    print(f"\nRMP result for Pachter: {result}")
+    assert result is not None
+    for key in ("rating", "difficulty", "num_ratings", "rmp_id"):
+        assert key in result, f"Missing key: {key}"

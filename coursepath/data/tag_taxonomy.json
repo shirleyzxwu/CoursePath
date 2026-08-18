@@ -1,7 +1,7 @@
 {
   "_meta": {
     "version": "1.0",
-    "description": "Canonical tag vocabulary for CoursePath. Each tag has a short description used for LLM annotation and embedding. Tags are grouped by domain but the grouping is informational only — the planner treats all tags uniformly.",
+    "description": "Canonical tag vocabulary for CoursePath. Each tag has a short description used for LLM annotation and embedding. Tags are grouped by domain but the grouping is informational only. The planner treats all tags uniformly.",
     "usage": "annotator.py reads this file to prompt the LLM. embedder.py embeds each tag's description to build the semantic index. Add new tags here freely; nothing else needs updating."
   },
 

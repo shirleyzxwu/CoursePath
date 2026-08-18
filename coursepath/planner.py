@@ -1,5 +1,5 @@
 """
-CoursePath — Semantic Academic Planning Engine
+Semantic Academic Planning Tool
 Four-year constraint-based planner with state transitions and DP scoring.
 """
 
@@ -11,12 +11,14 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Optional
 
+# Optional semantic profile builder (requires embedder index to be built)
 try:
     from coursepath.embedder import profile_from_text, profile_from_course_names
     EMBEDDER_AVAILABLE = True
 except ImportError:
     EMBEDDER_AVAILABLE = False
 
+# Optional data quality module
 try:
     from coursepath.data_quality import score_course, plan_quality_summary
     DATA_QUALITY_AVAILABLE = True
@@ -80,7 +82,7 @@ def build_prereq_graph() -> dict[str, set[str]]:
         if "and" in req:
             return set().union(*(collect_leaves(r) for r in req["and"]))
         if "or" in req:
-            # Under OR, only *one* branch is required — we conservatively
+            # Under OR, only *one* branch is required: conservatively
             # include all leaves so the planner knows every possible dependency.
             return set().union(*(collect_leaves(r) for r in req["or"]))
         return set()
@@ -118,7 +120,7 @@ def topological_order() -> list[str]:
 
 
 # ─────────────────────────────────────────────
-# Breadth / requirement tracking
+# Major Requirement tracking
 # ─────────────────────────────────────────────
 
 @dataclass
@@ -254,7 +256,7 @@ def score_schedule(
       w_interest  · interest_alignment
     − w_difficulty · avg_difficulty
     + w_professor  · avg_professor_rating
-    + w_breadth    · breadth_completion_delta   (optional)
+    + w_major_progress    · major_progress_delta
 
     Each course's contribution to interest and professor signals is scaled
     by its data_quality score (confidence weighting).  Difficulty is not
@@ -276,7 +278,7 @@ def score_schedule(
         weight_sum += dq
     interest = (interest_total / weight_sum) if weight_sum > 0 else 0.0
 
-    # ── Difficulty (confidence-agnostic) ────────────────────
+    # ── Difficulty (raw average) ────────────────────
     avg_diff = sum(COURSES[c]["difficulty"] for c in schedule) / n
 
     # ── Professor rating (confidence-weighted) ────────────────────────────
@@ -288,22 +290,50 @@ def score_schedule(
         prof_weight += dq
     avg_prof = (prof_total / prof_weight) if prof_weight > 0 else 0.0
 
-    # ── Breadth bonus ─────────────────────────────────────────────────────
-    breadth_bonus = 0.0
+    # ── Difficulty — blends rmp_difficulty with hand-authored value ────────
+    # rmp_difficulty comes from RMP DOM scrape; hand-authored difficulty is
+    # the manually set value in courses.json.  When both exist, rmp gets 60%
+    # weight. Both are confidence-weighted by data_quality.
+    diff_total = 0.0
+    diff_weight = 0.0
+    for c in schedule:
+        dq    = COURSES[c].get("data_quality", 1.0)
+        rmp_d = COURSES[c].get("rmp_difficulty")
+        base_d = COURSES[c]["difficulty"]
+        blended = (rmp_d * 0.6 + base_d * 0.4) if rmp_d is not None else base_d
+        diff_total  += dq * blended
+        diff_weight += dq
+    avg_diff_blended = (diff_total / diff_weight) if diff_weight > 0 else avg_diff
+
+    # ── Would-take-again bonus (confidence-weighted, 0-100 → 0-1) ─────────
+    wta_total = 0.0
+    wta_weight = 0.0
+    for c in schedule:
+        wta = COURSES[c].get("would_take_again")
+        if wta is not None:
+            dq = COURSES[c].get("data_quality", 1.0)
+            wta_total  += dq * (wta / 100.0)
+            wta_weight += dq
+    avg_wta = (wta_total / wta_weight) if wta_weight > 0 else 0.0
+
+    # ── Major progress bonus ───────────────────────────────────────────────
+    major_progress_bonus = 0.0
     if req_tracker is not None:
         before = req_tracker.completion_ratio()
         temp = req_tracker.clone()
         for c in schedule:
             temp.apply(c)
         after = temp.completion_ratio()
-        breadth_bonus = after - before
+        major_progress_bonus = after - before
 
     return (
-        weights.get("interest", 1.0) * interest
-        - weights.get("difficulty", 0.5) * avg_diff
-        + weights.get("professor", 0.3) * avg_prof
-        + weights.get("breadth", 0.2) * breadth_bonus
+        weights.get("interest", 1.0)           * interest
+        - weights.get("difficulty", 0.5)       * avg_diff_blended
+        + weights.get("professor", 0.3)        * avg_prof
+        + weights.get("would_take_again", 0.2) * avg_wta
+        + weights.get("major_progress", 0.2)   * major_progress_bonus
     )
+
 
 
 # ─────────────────────────────────────────────
@@ -426,7 +456,7 @@ def plan_four_years(
     Returns the beam_width best complete four-year plan states.
     """
     if weights is None:
-        weights = {"interest": 1.0, "difficulty": 0.5, "professor": 0.3, "breadth": 0.2}
+        weights = {"interest": 1.0, "difficulty": 0.5, "professor": 0.3, "major_progress": 0.2}
     if initial_completed is None:
         initial_completed = set()
 
@@ -496,12 +526,13 @@ def get_interest_profile(topics: list[str]) -> dict[str, float]:
 
 
 def get_weights() -> dict[str, float]:
-    print("\nSet scoring weights (suggested defaults in parentheses):")
+    print("\nSet scoring weights (suggested defaults — press Enter to accept):")
     return {
-        "interest":   float(input("  Interest alignment weight (1.0): ") or 1.0),
-        "difficulty": float(input("  Difficulty penalty weight  (0.5): ") or 0.5),
-        "professor":  float(input("  Professor quality weight   (0.3): ") or 0.3),
-        "breadth":    float(input("  Breadth bonus weight       (0.2): ") or 0.2),
+        "interest":         float(input("  Interest alignment weight  (1.0): ") or 1.0),
+        "difficulty":       float(input("  Difficulty penalty weight  (0.5): ") or 0.5),
+        "professor":        float(input("  Professor quality weight   (0.3): ") or 0.3),
+        "would_take_again": float(input("  Would-take-again weight    (0.2): ") or 0.2),
+        "major_progress":   float(input("  Major progress weight      (0.2): ") or 0.2),
     }
 
 
@@ -518,7 +549,7 @@ def print_four_year_plan(state: PlannerState) -> None:
     courses_taken = set(state.completed)
     print(f"\n  Total courses completed: {len(courses_taken)}")
     if state.req_tracker:
-        print(f"  Breadth completion: {state.req_tracker.completion_ratio():.0%}")
+        print(f"  Major progress:     {state.req_tracker.completion_ratio():.0%}")
 
 
 # ─────────────────────────────────────────────
@@ -537,7 +568,7 @@ if __name__ == "__main__":
         ).strip()
     else:
         profile_mode = "2"
-        print("(embedder not available — using manual topic rating)")
+        print("(embedder not available; using manual topic rating)")
 
     if profile_mode == "1" and EMBEDDER_AVAILABLE:
         user_text = input("\nDescribe your academic interests in a sentence or two:\n> ")
@@ -573,27 +604,57 @@ if __name__ == "__main__":
     if completed:
         print(f"  Loaded {len(completed)} completed courses: {', '.join(sorted(completed))}")
 
-    # ── Major + track selection ───────────────────────────────────────────────
+    # ── Major + track selection (supports multiple majors) ───────────────────
     majors = list_majors()
     print(f"\nAvailable majors: {', '.join(majors)}")
-    print("Enter major key (e.g. DATA_BA, MCB, BIOE_BS) or leave blank to skip:")
-    chosen_major = input("> ").strip().upper() or None
+    print("Enter one or more major keys separated by commas, or leave blank to skip.")
+    print("Example: DATA_BA, MCB")
+    raw_majors = input("> ").strip()
 
     req_tracker = None
-    if chosen_major and chosen_major in majors:
-        tracks = list_tracks(chosen_major)
-        if tracks and tracks != ["default"]:
-            print(f"Available tracks: {', '.join(tracks)}")
-            chosen_track = input("Enter track key or leave blank for default: ").strip() or "default"
-        else:
-            chosen_track = "default"
-        try:
-            req_tracker = build_tracker(chosen_major, chosen_track)
-            print(f"  Tracking {len(req_tracker.buckets)} requirement buckets for {chosen_major} / {chosen_track}")
-        except ValueError as e:
-            print(f"  ⚠ {e} — proceeding without requirement tracking")
-    elif chosen_major:
-        print(f"  ⚠ '{chosen_major}' not recognised — proceeding without requirement tracking")
+    if raw_majors:
+        chosen_majors = [m.strip().upper() for m in raw_majors.split(",") if m.strip()]
+        trackers = []
+        for chosen_major in chosen_majors:
+            if chosen_major not in majors:
+                print(f"  ⚠ '{chosen_major}' not recognised; skipped")
+                continue
+            tracks = list_tracks(chosen_major)
+            if tracks and tracks != ["default"]:
+                print(f"\n  Tracks for {chosen_major}: {', '.join(tracks)}")
+                chosen_track = input(f"  Track for {chosen_major} (or Enter for default): ").strip() or "default"
+            else:
+                chosen_track = "default"
+            try:
+                t = build_tracker(chosen_major, chosen_track)
+                trackers.append((chosen_major, chosen_track, t))
+                print(f"  ✓ {chosen_major} / {chosen_track} — {len(t.buckets)} requirement buckets")
+            except ValueError as e:
+                print(f"  ⚠ {e} — skipped")
+
+        if trackers:
+            if len(trackers) == 1:
+                req_tracker = trackers[0][2]
+            else:
+                # Merge multiple trackers: combine all buckets and course mappings
+                merged_buckets: dict = {}
+                merged_c2b: dict = {}
+                for major_key, track_key, t in trackers:
+                    prefix = f"{major_key}"
+                    for bucket, count in t.buckets.items():
+                        merged_buckets[f"{prefix}.{bucket}"] = count
+                    for course, buckets in t.course_to_buckets.items():
+                        prefixed = [f"{prefix}.{b}" for b in buckets]
+                        if course in merged_c2b:
+                            merged_c2b[course].extend(prefixed)
+                        else:
+                            merged_c2b[course] = prefixed
+                req_tracker = RequirementTracker(
+                    buckets=merged_buckets,
+                    course_to_buckets=merged_c2b,
+                )
+                total = sum(len(t.buckets) for _, _, t in trackers)
+                print(f"\n  Merged {len(trackers)} majors → {total} total requirement buckets")
 
     mode = input("\nMode — (1) single semester  (2) multi-semester plan [1/2]: ").strip()
 
