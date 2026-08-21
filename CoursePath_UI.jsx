@@ -260,11 +260,38 @@ function Chip({ label, color }) {
 }
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
-function Stat({ label, value }) {
+function Stat({ label, value, accent }) {
   return (
-    <div style={{ background:"var(--color-background-secondary)", borderRadius:"var(--border-radius-md)", padding:"12px 14px" }}>
-      <p style={{ fontSize:12, color:"var(--color-text-secondary)", margin:"0 0 4px" }}>{label}</p>
-      <p style={{ fontSize:22, fontWeight:500, margin:0, color:"var(--color-text-primary)" }}>{value}</p>
+    <div style={{
+      background:"var(--color-background-secondary)",
+      borderRadius:"var(--border-radius-md)",
+      padding:"14px 16px",
+      borderTop: accent ? `2px solid ${accent}` : "2px solid transparent",
+    }}>
+      <p style={{ fontSize:11, fontWeight:500, letterSpacing:"0.04em", textTransform:"uppercase", color:"var(--color-text-secondary)", margin:"0 0 6px" }}>{label}</p>
+      <p style={{ fontSize:24, fontWeight:700, margin:0, letterSpacing:"-0.5px", color:"var(--color-text-primary)" }}>{value}</p>
+    </div>
+  );
+}
+
+function MajorProgressBar({ pct }) {
+  if (pct === null) return null;
+  const color = pct >= 80 ? "#3B6D11" : pct >= 50 ? "#BA7517" : "#533AB7";
+  return (
+    <div style={{ marginBottom:"1.25rem" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:6 }}>
+        <span style={{ fontSize:12, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", color:"var(--color-text-secondary)" }}>
+          Major requirement progress
+        </span>
+        <span style={{ fontSize:14, fontWeight:700, color }}>{pct}%</span>
+      </div>
+      <div style={{ height:6, borderRadius:99, background:"var(--color-border-tertiary)", overflow:"hidden" }}>
+        <div style={{
+          height:"100%", width:`${pct}%`, borderRadius:99,
+          background: color,
+          transition:"width 0.4s ease",
+        }} />
+      </div>
     </div>
   );
 }
@@ -275,20 +302,20 @@ function CourseCard({ name, showQuality }) {
   const dq = dataQuality(name);
   const instructorStr = cd.instructors.filter(i => i !== "TBA").join(", ") || "TBA";
   return (
-    <div style={{ marginBottom:"0.85rem", paddingBottom:"0.85rem", borderBottom:"0.5px solid var(--color-border-tertiary)" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:8 }}>
-        <span style={{ fontSize:14, fontWeight:500, color:"var(--color-text-primary)" }}>{name}</span>
-        <span style={{ fontSize:12, color:"var(--color-text-secondary)", whiteSpace:"nowrap" }}>{cd.units} units</span>
+    <div style={{ marginBottom:"1rem", paddingBottom:"1rem", borderBottom:"0.5px solid var(--color-border-tertiary)" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:8, marginBottom:2 }}>
+        <span style={{ fontSize:14, fontWeight:700, letterSpacing:"-0.2px", color:"var(--color-text-primary)" }}>{name}</span>
+        <span style={{ fontSize:12, fontWeight:500, color:"var(--color-text-secondary)", whiteSpace:"nowrap" }}>{cd.units} units</span>
       </div>
-      <div style={{ fontSize:12, color:"var(--color-text-secondary)", margin:"2px 0 6px" }}>{instructorStr}</div>
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+      <div style={{ fontSize:12, color:"var(--color-text-secondary)", margin:"0 0 7px", opacity:0.8 }}>{instructorStr}</div>
+      <div style={{ display:"flex", gap:5, flexWrap:"wrap", alignItems:"center" }}>
         {Object.entries(cd.topics).map(([t, w]) =>
           <Chip key={t} label={`${t} ${(w*100).toFixed(0)}%`} color={tc(t)} />
         )}
-        <span style={{ marginLeft:"auto", fontSize:12, color:"var(--color-text-secondary)", whiteSpace:"nowrap" }}>
-          diff <span style={{ color:dc(cd.rmp_difficulty ?? cd.difficulty), fontWeight:500 }}>
+        <span style={{ marginLeft:"auto", fontSize:12, color:"var(--color-text-secondary)", whiteSpace:"nowrap", opacity:0.85 }}>
+          diff <span style={{ color:dc(cd.rmp_difficulty ?? cd.difficulty), fontWeight:600 }}>
             {(cd.rmp_difficulty ?? cd.difficulty).toFixed(1)}
-            {cd.rmp_difficulty != null && <span style={{fontSize:10, opacity:0.7}}> rmp</span>}
+            {cd.rmp_difficulty != null && <span style={{fontSize:10, opacity:0.6}}> rmp</span>}
           </span>
           {cd.would_take_again != null &&
             <span> · ↩ {cd.would_take_again.toFixed(0)}%</span>}
@@ -305,16 +332,17 @@ function CourseCard({ name, showQuality }) {
 // ── Tab bar ───────────────────────────────────────────────────────────────────
 function TabBar({ tabs, active, onChange }) {
   return (
-    <div style={{ display:"flex", gap:2, borderBottom:"0.5px solid var(--color-border-tertiary)", marginBottom:"1.25rem" }}>
+    <div style={{ display:"flex", gap:2, borderBottom:"1px solid var(--color-border-tertiary)", marginBottom:"1.5rem" }}>
       {tabs.map(t => (
         <button key={t} onClick={() => onChange(t)} style={{
-          background: active===t ? "var(--color-background-secondary)" : "transparent",
+          background:"transparent",
           border:"none",
           borderBottom: active===t ? "2px solid var(--color-text-primary)" : "2px solid transparent",
-          padding:"8px 14px", fontSize:13, fontWeight: active===t ? 500 : 400,
+          padding:"9px 16px", fontSize:13, fontWeight: active===t ? 600 : 400,
           color: active===t ? "var(--color-text-primary)" : "var(--color-text-secondary)",
           cursor:"pointer", borderRadius:"var(--border-radius-md) var(--border-radius-md) 0 0",
-          marginBottom:-1,
+          marginBottom:-1, letterSpacing: active===t ? "-0.01em" : "normal",
+          transition:"color 0.15s",
         }}>{t}</button>
       ))}
     </div>
@@ -395,20 +423,32 @@ export default function App() {
   }, [currentPlan, majorKeys, completedSet]);
 
   return (
-    <div style={{ fontFamily:"var(--font-sans)", padding:"1.25rem 1rem", maxWidth:700 }}>
-      <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:"0.25rem" }}>
-        <h2 style={{ fontSize:20, fontWeight:500, margin:0, color:"var(--color-text-primary)" }}>CoursePath</h2>
-        <a href="https://github.com/shirleyzxwu/CoursePath" target="_blank" rel="noopener noreferrer"
-          style={{ fontSize:12, color:"var(--color-text-secondary)", textDecoration:"none" }}>
-          GitHub ↗
-        </a>
+    <div style={{ fontFamily:"var(--font-sans)", padding:"2rem 1rem", maxWidth:680, margin:"0 auto" }}>
+      {/* ── Header ── */}
+      <div style={{ marginBottom:"1.75rem" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"0.4rem" }}>
+          <div style={{ display:"flex", alignItems:"baseline", gap:"0.6rem" }}>
+            <h1 style={{ fontSize:26, fontWeight:700, margin:0, letterSpacing:"-0.5px", color:"var(--color-text-primary)" }}>
+              CoursePath
+            </h1>
+            <span style={{
+              fontSize:11, fontWeight:500, letterSpacing:"0.05em", textTransform:"uppercase",
+              color:"var(--color-text-secondary)", opacity:0.7, paddingBottom:2,
+            }}>UC Berkeley</span>
+          </div>
+          <a href="https://github.com/shirleyzxwu/CoursePath" target="_blank" rel="noopener noreferrer"
+            style={{
+              fontSize:12, color:"var(--color-text-secondary)", textDecoration:"none",
+              border:"0.5px solid var(--color-border-tertiary)", padding:"4px 10px",
+              borderRadius:"var(--border-radius-md)", opacity:0.8,
+            }}>
+            GitHub ↗
+          </a>
+        </div>
+        <p style={{ fontSize:13, color:"var(--color-text-secondary)", margin:0, lineHeight:1.5 }}>
+          Semantic four-year academic planner &nbsp;·&nbsp; {Object.keys(COURSES).length} courses &nbsp;·&nbsp; beam search over prerequisite graph
+        </p>
       </div>
-      <p style={{ fontSize:13, color:"var(--color-text-secondary)", margin:"0 0 0.25rem" }}>
-        Semantic four-year academic planner · UC Berkeley · {Object.keys(COURSES).length} courses
-      </p>
-      <p style={{ fontSize:11, color:"var(--color-text-secondary)", margin:"0 0 1.25rem", opacity:0.7 }}>
-        Interest profile → scoring weights → four-year beam search
-      </p>
 
       <TabBar tabs={["Profile","Weights","Plan"]} active={tab} onChange={setTab} />
 
@@ -599,39 +639,43 @@ export default function App() {
         <div>
           {/* Plan variant selector */}
           {plan.length > 1 && (
-            <div style={{ display:"flex", gap:6, marginBottom:"1rem" }}>
+            <div style={{ display:"flex", gap:6, marginBottom:"1.1rem", flexWrap:"wrap" }}>
               {plan.map((p, i) => (
                 <button key={i} onClick={() => { setActivePlan(i); setActiveSem(0); }} style={{
-                  padding:"6px 12px", fontSize:12,
+                  padding:"6px 14px", fontSize:12, fontWeight: activePlan===i ? 600 : 400,
                   background: activePlan===i ? "var(--color-background-secondary)" : "transparent",
                   border: activePlan===i ? "1px solid var(--color-border-primary)" : "0.5px solid var(--color-border-tertiary)",
                   borderRadius:"var(--border-radius-md)", cursor:"pointer", color:"var(--color-text-primary)",
-                }}>Plan {i+1} · {p.score.toFixed(2)}</button>
+                  letterSpacing:"-0.01em",
+                }}>Plan {i+1} <span style={{ opacity:0.55, fontWeight:400 }}>· {p.score.toFixed(2)}</span></button>
               ))}
             </div>
           )}
 
           {/* Stats */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:"1.25rem" }}>
-            <Stat label="Score" value={currentPlan.score.toFixed(2)} />
-            <Stat label="Courses" value={totalCourses} />
-            <Stat label="Units" value={totalUnits} />
-            <Stat label="Major req." value={majorProgress !== null ? `${majorProgress}%` : "—"} />
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:"1.25rem" }}>
+            <Stat label="Score" value={currentPlan.score.toFixed(2)} accent="#533AB7" />
+            <Stat label="Courses" value={totalCourses} accent="#185FA5" />
+            <Stat label="Units" value={totalUnits} accent="#0F6E56" />
           </div>
+
+          {/* Major progress bar */}
+          <MajorProgressBar pct={majorProgress} />
 
           {/* Semester grid */}
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6, marginBottom:"1.25rem" }}>
             {currentPlan.semesters.map((sem, i) => (
               <button key={i} onClick={() => setActiveSem(i)} style={{
-                padding:"8px 6px", fontSize:11, textAlign:"left",
+                padding:"10px 8px", fontSize:11, textAlign:"left",
                 background: activeSem===i ? "var(--color-background-secondary)" : "transparent",
                 border: activeSem===i ? "1px solid var(--color-border-primary)" : "0.5px solid var(--color-border-tertiary)",
                 borderRadius:"var(--border-radius-md)", cursor:"pointer", color:"var(--color-text-primary)",
+                transition:"background 0.1s",
               }}>
-                <div style={{ fontWeight:500 }}>{sem.year}</div>
-                <div style={{ color:"var(--color-text-secondary)" }}>{sem.term}</div>
-                <div style={{ marginTop:3, color:"var(--color-text-secondary)" }}>
-                  {sem.courses.length} · {sem.units}u · {sem.score.toFixed(2)}
+                <div style={{ fontWeight:700, fontSize:12, letterSpacing:"-0.2px" }}>{sem.year}</div>
+                <div style={{ color:"var(--color-text-secondary)", marginTop:1 }}>{sem.term}</div>
+                <div style={{ marginTop:5, color:"var(--color-text-secondary)", fontSize:11, opacity:0.75 }}>
+                  {sem.courses.length} courses · {sem.units}u
                 </div>
               </button>
             ))}
@@ -640,15 +684,15 @@ export default function App() {
           {/* Semester detail */}
           {currentSem && (
             <div style={{
-              border:"0.5px solid var(--color-border-tertiary)",
-              borderRadius:"var(--border-radius-lg)", padding:"1rem 1.25rem",
+              border:"1px solid var(--color-border-tertiary)",
+              borderRadius:"var(--border-radius-lg)", padding:"1.25rem 1.5rem",
             }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"1rem" }}>
-                <p style={{ fontWeight:500, margin:0, fontSize:15, color:"var(--color-text-primary)" }}>
-                  {currentSem.year} · {currentSem.term}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"1.1rem" }}>
+                <p style={{ fontWeight:700, margin:0, fontSize:16, letterSpacing:"-0.3px", color:"var(--color-text-primary)" }}>
+                  {currentSem.year} &nbsp;·&nbsp; {currentSem.term}
                 </p>
                 <span style={{ fontSize:12, color:"var(--color-text-secondary)" }}>
-                  {currentSem.units} units · score {currentSem.score.toFixed(3)}
+                  {currentSem.units} units &nbsp;·&nbsp; score {currentSem.score.toFixed(3)}
                 </span>
               </div>
 
@@ -656,25 +700,15 @@ export default function App() {
                 ? <p style={{ fontSize:13, color:"var(--color-text-secondary)" }}>No valid schedule found.</p>
                 : currentSem.courses.map(c => <CourseCard key={c} name={c} showQuality={showQuality} />)
               }
-
-              <div style={{ display:"flex", justifyContent:"flex-end", marginTop:4 }}>
-                <a
-                  href={`https://github.com/shirleyzxwu/CoursePath`}
-                  target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize:12, background:"none", border:"0.5px solid var(--color-border-secondary)",
-                    padding:"4px 10px", borderRadius:"var(--border-radius-md)", cursor:"pointer",
-                    color:"var(--color-text-primary)", textDecoration:"none" }}>
-                  View on GitHub ↗
-                </a>
-              </div>
             </div>
           )}
 
           <button onClick={generate} style={{
-            marginTop:"1rem", padding:"7px 14px", fontSize:12,
-            background:"transparent", border:"0.5px solid var(--color-border-secondary)",
-            borderRadius:"var(--border-radius-md)", cursor:"pointer", color:"var(--color-text-primary)"
-          }}>Regenerate</button>
+            marginTop:"1rem", padding:"8px 18px", fontSize:13, fontWeight:500,
+            background:"transparent", border:"1px solid var(--color-border-secondary)",
+            borderRadius:"var(--border-radius-md)", cursor:"pointer", color:"var(--color-text-primary)",
+            letterSpacing:"-0.01em",
+          }}>↺ Regenerate</button>
         </div>
       )}
     </div>
